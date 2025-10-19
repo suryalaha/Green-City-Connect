@@ -49,6 +49,8 @@ export const translations = {
     pickupDayRecycling: 'Every Tuesday',
     pickupDayCompost: 'Every Friday',
     pickupDayGeneral: 'Every Friday',
+    pastCollectionsTitle: 'Past Collections',
+    noPastCollections: 'No past collection data available.',
 
     // Chatbot
     chatbotGreetingMorning: 'Good morning! How can I help you with your waste management today?',

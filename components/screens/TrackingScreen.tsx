@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
+import { Pickup } from '../../types';
 
 const TruckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
@@ -20,7 +21,7 @@ const HomeIcon = () => (
 
 const TrackingScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { user } = useAppContext();
+    const { user, pickupHistory } = useAppContext();
     const [progress, setProgress] = useState(0); // 0 to 100
     const [eta, setEta] = useState(15);
     const [status, setStatus] = useState<'statusEnRoute' | 'statusArrivingSoon' | 'statusArrived'>('statusEnRoute');
@@ -61,6 +62,19 @@ const TrackingScreen: React.FC = () => {
 
         return () => clearInterval(interval);
     }, []);
+
+    const getPickupDetails = (type: Pickup['type']) => {
+        switch (type) {
+            case 'recycling':
+                return { icon: '♻️', text: t('recycling') };
+            case 'compost':
+                return { icon: '🌿', text: t('compost') };
+            case 'general':
+                return { icon: '🗑️', text: t('generalWaste') };
+            default:
+                return { icon: '🗑️', text: '' };
+        }
+    };
 
     return (
         <div>
@@ -146,6 +160,38 @@ const TrackingScreen: React.FC = () => {
                         </div>
                     </li>
                 </ul>
+            </Card>
+
+            <Card className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">{t('pastCollectionsTitle')}</h2>
+                {pickupHistory && pickupHistory.length > 0 ? (
+                    <ul className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                        {[...pickupHistory]
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .map((pickup, index) => {
+                                const { icon, text } = getPickupDetails(pickup.type);
+                                return (
+                                    <li key={index} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50">
+                                        <span className="text-2xl mr-4" aria-label={`${pickup.type} icon`}>
+                                            {icon}
+                                        </span>
+                                        <div>
+                                            <p className="font-semibold">{text}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                {new Date(pickup.date).toLocaleDateString(undefined, {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-center text-gray-500 py-4">{t('noPastCollections')}</p>
+                )}
             </Card>
         </div>
     );
