@@ -33,6 +33,16 @@ export const translations = {
     watchingAd: 'Watching ad...',
     thankYou: 'Thank You!',
 
+    // TrackingScreen
+    liveTrackingTitle: 'Live Truck Tracking',
+    statusLabel: 'Status',
+    etaLabel: 'ETA',
+    statusEnRoute: 'En Route',
+    statusArrivingSoon: 'Arriving Soon',
+    statusArrived: 'Arrived',
+    minutes: 'minutes',
+    yourLocation: 'Your Location',
+
     // Chatbot
     chatbotGreetingMorning: 'Good morning! How can I help you with your waste management today?',
     chatbotGreetingAfternoon: 'Good afternoon! How can I assist you?',
