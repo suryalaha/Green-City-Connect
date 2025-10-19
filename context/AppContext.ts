@@ -3,7 +3,7 @@
 // but is named .ts to match the provided file structure and error messages.
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { User, WasteLog, Booking, Pickup, Complaint } from '../types';
+import { User, WasteLog, Booking, Pickup, Complaint, Payment } from '../types';
 import { translations } from '../utils/translations';
 
 type Language = 'en'; // Can be extended with more languages
@@ -26,6 +26,8 @@ interface AppContextType {
   addComplaint: (complaint: Omit<Complaint, 'id' | 'date' | 'status'>) => void;
   theme: Theme;
   toggleTheme: () => void;
+  payments: Payment[];
+  makePayment: (amount: number) => Payment;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -56,6 +58,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             status: 'in-progress',
         }
     ]);
+  const [payments, setPayments] = useState<Payment[]>([
+    { id: 'TXN1003', date: '2024-07-01', amount: 75.00, status: 'paid' },
+    { id: 'TXN1002', date: '2024-06-01', amount: 75.00, status: 'paid' },
+    { id: 'TXN1001', date: '2024-05-01', amount: 75.00, status: 'paid' },
+  ]);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
 
   useEffect(() => {
@@ -119,6 +126,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setComplaints(prev => [newComplaint, ...prev]);
   };
 
+  const makePayment = (amount: number): Payment => {
+    const newPayment: Payment = {
+        id: `TXN${Date.now()}`,
+        date: new Date().toISOString(),
+        amount: amount,
+        status: 'paid',
+    };
+    setPayments(prev => [newPayment, ...prev]);
+    setOutstandingBalance(prev => prev - amount);
+    return newPayment;
+  };
+
   const value = {
     user,
     login,
@@ -136,6 +155,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addComplaint,
     theme,
     toggleTheme,
+    payments,
+    makePayment,
   };
 
   return React.createElement(AppContext.Provider, { value: value }, children);

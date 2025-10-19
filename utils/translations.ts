@@ -58,7 +58,9 @@ export const translations = {
     chatbotGreetingEvening: 'Good evening! What can I help you with?',
 
     // PaymentScreen
-    makePayment: 'Make Payment',
+    payNow: 'Pay Now',
+    verifyingPayment: 'Verifying...',
+    makePayment: 'Pay via UPI App',
     showQRCode: 'Show QR Code',
     autoRenewalSettings: 'Auto-Renewal Settings',
     enableAutoRenewal: 'Enable Auto-Renewal',
@@ -71,6 +73,17 @@ export const translations = {
     amount: 'Amount',
     monthlyFee: 'Monthly Waste Management Fee',
     close: 'Close',
+    paymentModalInfo: 'After paying, close this window. We will verify your payment.',
+    paymentSuccessful: 'Payment Successful!',
+    receiptSent: 'A digital receipt has been sent to your registered email and phone number.',
+    transactionId: 'Transaction ID',
+    date: 'Date',
+    amountPaid: 'Amount Paid',
+    paymentMethod: 'Payment Method',
+    upi: 'UPI',
+    done: 'Done',
+    downloadReceipt: 'Download Receipt',
+    downloading: 'Downloading receipt for transaction',
 
     // CommunityDashboardScreen
     communityDashboard: 'Community Dashboard',
