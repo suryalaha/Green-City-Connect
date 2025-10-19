@@ -68,6 +68,7 @@ export const translations = {
     paymentHistory: 'Payment History',
     paymentOn: 'Payment on',
     paid: 'Paid',
+    failed: 'Failed',
     scanToPay: 'Scan to Pay',
     payingTo: 'Paying to',
     amount: 'Amount',
@@ -84,6 +85,10 @@ export const translations = {
     done: 'Done',
     downloadReceipt: 'Download Receipt',
     downloading: 'Downloading receipt for transaction',
+    paymentFailed: 'Payment Failed',
+    paymentFailedDesc: 'We were unable to process your payment. Please try again.',
+    tryAgain: 'Try Again',
+    securePayment: 'Secure & PCI-DSS Compliant',
 
     // CommunityDashboardScreen
     communityDashboard: 'Community Dashboard',

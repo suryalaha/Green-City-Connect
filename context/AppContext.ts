@@ -27,7 +27,7 @@ interface AppContextType {
   theme: Theme;
   toggleTheme: () => void;
   payments: Payment[];
-  makePayment: (amount: number) => Payment;
+  makePayment: (amount: number) => Promise<Payment>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -126,16 +126,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setComplaints(prev => [newComplaint, ...prev]);
   };
 
-  const makePayment = (amount: number): Payment => {
-    const newPayment: Payment = {
+  const makePayment = (amount: number): Promise<Payment> => {
+    return new Promise((resolve, reject) => {
+      const basePayment = {
         id: `TXN${Date.now()}`,
         date: new Date().toISOString(),
         amount: amount,
-        status: 'paid',
-    };
-    setPayments(prev => [newPayment, ...prev]);
-    setOutstandingBalance(prev => prev - amount);
-    return newPayment;
+      };
+
+      // Simulate network delay and potential failure
+      setTimeout(() => {
+        const isSuccess = Math.random() > 0.2; // 80% success rate
+
+        if (isSuccess) {
+          const successfulPayment: Payment = { ...basePayment, status: 'paid' };
+          setPayments(prev => [successfulPayment, ...prev]);
+          setOutstandingBalance(prev => Math.max(0, prev - amount));
+          resolve(successfulPayment);
+        } else {
+          const failedPayment: Payment = { ...basePayment, status: 'failed' };
+          setPayments(prev => [failedPayment, ...prev]);
+          reject(failedPayment);
+        }
+      }, 3000); // 3-second verification simulation
+    });
   };
 
   const value = {

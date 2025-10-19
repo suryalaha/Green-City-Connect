@@ -4,6 +4,13 @@ import { Payment } from '../../types';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
 
+const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>
+);
+
 const PaymentModal: React.FC<{ onClose: () => void; amount: number; upiId: string; payeeName: string; t: (key: any) => string; }> = ({ onClose, amount, upiId, payeeName, t }) => {
     const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(t('monthlyFee'))}`;
     const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
@@ -26,7 +33,11 @@ const PaymentModal: React.FC<{ onClose: () => void; amount: number; upiId: strin
                 >
                     {t('makePayment')}
                 </a>
-                <p className="text-xs text-gray-500">{t('paymentModalInfo')}</p>
+                <p className="text-xs text-gray-500 mb-4">{t('paymentModalInfo')}</p>
+                 <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">
+                    <LockIcon className="w-4 h-4 mr-1" />
+                    <span>{t('securePayment')}</span>
+                </div>
             </Card>
         </div>
     );
@@ -57,6 +68,33 @@ const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: a
     );
 };
 
+const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t: (key: any) => string; }> = ({ onClose, onRetry, t }) => {
+    const handleRetry = () => {
+        onClose();
+        onRetry();
+    };
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-sm text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </div>
+                <h2 className="text-2xl font-bold mb-2">{t('paymentFailed')}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('paymentFailedDesc')}</p>
+                <div className="flex space-x-4">
+                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-600 text-foreground dark:text-dark-foreground py-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                        {t('close')}
+                    </button>
+                    <button onClick={handleRetry} className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+                        {t('tryAgain')}
+                    </button>
+                </div>
+            </Card>
+        </div>
+    );
+};
 
 const PaymentScreen: React.FC = () => {
     const { t } = useTranslations();
@@ -64,6 +102,7 @@ const PaymentScreen: React.FC = () => {
     
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showReceiptModal, setShowReceiptModal] = useState(false);
+    const [showFailedModal, setShowFailedModal] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [completedPayment, setCompletedPayment] = useState<Payment | null>(null);
     const [autoRenewal, setAutoRenewal] = useState(true);
@@ -74,16 +113,19 @@ const PaymentScreen: React.FC = () => {
         }
     };
 
-    const handlePaymentModalClose = () => {
+    const handlePaymentModalClose = async () => {
         setShowPaymentModal(false);
         setIsVerifying(true);
-
-        setTimeout(() => {
-            const newPayment = makePayment(outstandingBalance);
+        try {
+            const newPayment = await makePayment(outstandingBalance);
             setCompletedPayment(newPayment);
-            setIsVerifying(false);
             setShowReceiptModal(true);
-        }, 3000); // Simulate 3 second verification
+        } catch (failedPayment) {
+            setCompletedPayment(failedPayment as Payment);
+            setShowFailedModal(true);
+        } finally {
+            setIsVerifying(false);
+        }
     };
     
     const handleReceiptModalClose = () => {
@@ -99,6 +141,8 @@ const PaymentScreen: React.FC = () => {
         <div>
             {showPaymentModal && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {showReceiptModal && completedPayment && <ReceiptModal onClose={handleReceiptModalClose} payment={completedPayment} t={t} />}
+            {showFailedModal && <PaymentFailedModal onClose={() => setShowFailedModal(false)} onRetry={handlePayNowClick} t={t} />}
+
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
@@ -144,27 +188,40 @@ const PaymentScreen: React.FC = () => {
             <Card className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">{t('paymentHistory')}</h2>
                 <ul className="space-y-2">
-                    {payments.map(p => (
-                        <li key={p.id} className="flex justify-between items-center py-3 border-b dark:border-gray-700 last:border-b-0">
-                            <div className="flex items-center space-x-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.status === 'paid' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                                        <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm3 0a1 1 0 011-1h1a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd" />
-                                    </svg>
+                    {payments.map(p => {
+                        const isPaid = p.status === 'paid';
+                        return (
+                            <li key={p.id} className="flex justify-between items-center py-3 border-b dark:border-gray-700 last:border-b-0">
+                                <div className="flex items-center space-x-4">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPaid ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                                        {isPaid ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold">
+                                            ₹{p.amount.toFixed(2)}
+                                            {!isPaid && <span className="text-xs text-red-500 ml-2 font-medium">({t('failed')})</span>}
+                                        </p>
+                                        <p className="text-sm text-gray-500">{t('paymentOn')} {new Date(p.date).toLocaleDateString()}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-semibold">₹{p.amount.toFixed(2)}</p>
-                                    <p className="text-sm text-gray-500">{t('paymentOn')} {new Date(p.date).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => handleDownloadReceipt(p.id)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={t('downloadReceipt')}>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </li>
-                    ))}
+                                {isPaid && (
+                                    <button onClick={() => handleDownloadReceipt(p.id)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={t('downloadReceipt')}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </li>
+                        )
+                    })}
                 </ul>
             </Card>
         </div>
