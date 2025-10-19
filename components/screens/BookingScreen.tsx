@@ -81,7 +81,7 @@ const PaymentModal: React.FC<{ onClose: () => void; booking: Booking; upiId: str
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-sm text-center relative">
+            <Card className="w-full max-w-sm text-center relative animate-bounce-in">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -102,7 +102,7 @@ const PaymentModal: React.FC<{ onClose: () => void; booking: Booking; upiId: str
 const ConfirmationModal: React.FC<{ onClose: () => void; booking: Booking; t: (key: any) => string; }> = ({ onClose, booking, t }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-sm text-center">
+            <Card className="w-full max-w-sm text-center animate-bounce-in">
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-10 h-10 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                 </div>
@@ -120,9 +120,9 @@ const ConfirmationModal: React.FC<{ onClose: () => void; booking: Booking; t: (k
 
 const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t: (key: any) => string; }> = ({ onClose, onRetry, t }) => (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-sm text-center">
+        <Card className="w-full max-w-sm text-center animate-bounce-in">
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </div>
             <h2 className="text-2xl font-bold mb-2">{t('bookingPaymentFailed')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('bookingPaymentFailedDesc')}</p>
@@ -192,11 +192,11 @@ const BookingScreen: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label className="block text-sm font-medium mb-1" htmlFor="date">{t('selectDate')}</label>
-                            <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" required />
+                            <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 transition-colors ${date ? 'border-primary dark:border-dark-primary' : 'border-gray-300'}`} required />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1" htmlFor="time">{t('selectTime')}</label>
-                            <input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" required />
+                            <input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 transition-colors ${time ? 'border-primary dark:border-dark-primary' : 'border-gray-300'}`} required />
                         </div>
                     </div>
                     <div className="mb-6">
@@ -213,7 +213,7 @@ const BookingScreen: React.FC = () => {
                             </label>
                         </div>
                     </div>
-                    <button type="submit" disabled={state.isVerifying} className="w-full bg-primary dark:bg-dark-primary text-white py-3 rounded-md hover:bg-primary-dark transition-colors font-semibold disabled:bg-gray-400">
+                    <button type="submit" disabled={state.isVerifying} className="w-full bg-primary dark:bg-dark-primary text-white py-3 rounded-md hover:bg-primary-dark transition-transform transform active:scale-95 font-semibold disabled:bg-gray-400">
                         {state.isVerifying ? t('verifyingPayment') : t('confirmAndPay')}
                     </button>
                 </form>
