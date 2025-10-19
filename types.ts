@@ -35,6 +35,8 @@ export interface Booking {
   notes: string;
   reminderEnabled: boolean;
   status: 'scheduled' | 'completed' | 'cancelled';
+  amount?: number;
+  paymentStatus?: 'unpaid' | 'paid' | 'failed';
 }
 
 export interface Pickup {

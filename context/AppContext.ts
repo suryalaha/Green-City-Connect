@@ -19,7 +19,7 @@ interface AppContextType {
   outstandingBalance: number;
   addWasteLog: (type: 'wet' | 'dry' | 'mixed') => boolean;
   wasteLogs: WasteLog[];
-  addBooking: (booking: Omit<Booking, 'id' | 'status'>) => void;
+  addBooking: (booking: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus'>) => Booking;
   bookings: Booking[];
   pickupHistory: Pickup[];
   complaints: Complaint[];
@@ -28,6 +28,7 @@ interface AppContextType {
   toggleTheme: () => void;
   payments: Payment[];
   makePayment: (amount: number) => Promise<Payment>;
+  payForBooking: (bookingId: string) => Promise<Payment>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,6 +46,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       notes: 'Old furniture pickup',
       reminderEnabled: true,
       status: 'completed',
+      amount: 150.00,
+      paymentStatus: 'paid',
     },
     {
       id: 'b2',
@@ -53,6 +56,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       notes: 'Garden waste',
       reminderEnabled: false,
       status: 'cancelled',
+      amount: 150.00,
+      paymentStatus: 'unpaid',
     },
   ]);
   const [pickupHistory, setPickupHistory] = useState<Pickup[]>([
@@ -76,6 +81,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     ]);
   const [payments, setPayments] = useState<Payment[]>([
+    { id: 'TXN-BOOK-162781', date: new Date(Date.now() - 86400000 * 10).toISOString(), amount: 150.00, status: 'paid' },
     { id: 'TXN1003', date: '2024-07-01', amount: 75.00, status: 'paid' },
     { id: 'TXN1002', date: '2024-06-01', amount: 75.00, status: 'paid' },
     { id: 'TXN1001', date: '2024-05-01', amount: 75.00, status: 'paid' },
@@ -125,13 +131,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return isThirdStrike;
   };
 
-  const addBooking = (bookingData: Omit<Booking, 'id' | 'status'>) => {
+  const addBooking = (bookingData: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus'>): Booking => {
       const newBooking: Booking = {
           ...bookingData,
-          id: Date.now().toString(),
+          id: `B${Date.now()}`,
           status: 'scheduled',
+          amount: 150.00,
+          paymentStatus: 'unpaid',
       };
       setBookings(prev => [newBooking, ...prev]);
+      return newBooking;
   };
 
   const addComplaint = (complaintData: Omit<Complaint, 'id' | 'date' | 'status'>) => {
@@ -152,9 +161,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         amount: amount,
       };
 
-      // Simulate network delay and potential failure
       setTimeout(() => {
-        const isSuccess = Math.random() < 0.8; // 80% chance of success
+        const isSuccess = Math.random() < 0.8; 
 
         if (isSuccess) {
           const successfulPayment: Payment = { ...basePayment, status: 'paid' };
@@ -166,7 +174,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setPayments(prev => [failedPayment, ...prev]);
           reject(failedPayment);
         }
-      }, 3000); // 3-second verification simulation
+      }, 3000);
+    });
+  };
+
+  const payForBooking = (bookingId: string): Promise<Payment> => {
+    return new Promise((resolve, reject) => {
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking || !booking.amount) {
+        const failedPayment: Payment = { id: `TXN-FAIL-${Date.now()}`, date: new Date().toISOString(), amount: 150, status: 'failed' };
+        reject(failedPayment);
+        return;
+      }
+
+      const basePayment = {
+        id: `TXN-BOOK-${bookingId.slice(-6)}`,
+        date: new Date().toISOString(),
+        amount: booking.amount,
+      };
+
+      setTimeout(() => {
+        const isSuccess = Math.random() < 0.8;
+        
+        setBookings(prev => prev.map(b => 
+            b.id === bookingId 
+            ? { ...b, paymentStatus: isSuccess ? 'paid' : 'failed' } 
+            : b
+        ));
+        
+        if (isSuccess) {
+            const successfulPayment: Payment = { ...basePayment, status: 'paid' };
+            setPayments(prev => [successfulPayment, ...prev]);
+            resolve(successfulPayment);
+        } else {
+            const failedPayment: Payment = { ...basePayment, status: 'failed' };
+            setPayments(prev => [failedPayment, ...prev]);
+            reject(failedPayment);
+        }
+      }, 3000);
     });
   };
 
@@ -189,6 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     toggleTheme,
     payments,
     makePayment,
+    payForBooking,
   };
 
   return React.createElement(AppContext.Provider, { value: value }, children);

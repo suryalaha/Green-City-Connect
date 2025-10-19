@@ -155,14 +155,23 @@ export const translations = {
     notesPlaceholder: 'e.g., "Large cardboard boxes from moving"',
     bookingReminders: 'Booking Reminders',
     bookingReminderDesc: 'Get a reminder 24 hours before the pickup.',
-    confirmBooking: 'Confirm Booking',
-    bookingConfirmed: 'Booking Confirmed!',
-    bookingConfirmedDesc: 'Your special collection is scheduled for {date} at {time}.',
+    confirmAndPay: 'Confirm & Pay',
     bookingHistoryTitle: 'Booking History',
     noBookingHistory: 'No past or upcoming bookings found.',
     statusScheduled: 'Scheduled',
     statusCompleted: 'Completed',
     statusCancelled: 'Cancelled',
+    bookingPaymentTitle: 'Pay for Special Collection',
+    bookingAmount: 'Booking Amount',
+    bookingPaymentSuccess: 'Booking Confirmed!',
+    bookingPaymentSuccessDesc: 'Your payment was successful and your special collection is scheduled.',
+    bookingPaymentFailed: 'Booking Payment Failed',
+    bookingPaymentFailedDesc: 'We couldn\'t process the payment. Please try again to confirm your booking.',
+    paymentStatus: 'Payment Status',
+    statusPaid: 'Paid',
+    statusUnpaid: 'Unpaid',
+    statusFailed: 'Failed',
+
 
     // ProfileScreen
     yourProfile: 'Your Profile',
@@ -201,5 +210,4 @@ export const translations = {
     submitFeedback: 'Submit Feedback',
     feedbackSubmitted: 'Thank you for your feedback!',
   },
-  // Add other languages here if needed
 };
