@@ -9,8 +9,9 @@ import BottomNav from './components/BottomNav';
 import Chatbot from './components/Chatbot';
 import CommunityDashboardScreen from './components/screens/CommunityDashboardScreen';
 import BookingScreen from './components/screens/BookingScreen';
+import HelpScreen from './components/screens/HelpScreen';
 
-export type Screen = 'dashboard' | 'tracking' | 'booking' | 'payment' | 'profile' | 'community';
+export type Screen = 'dashboard' | 'tracking' | 'booking' | 'payment' | 'profile' | 'community' | 'help';
 
 const AppContent: React.FC = () => {
   const { user } = useAppContext();
@@ -31,6 +32,8 @@ const AppContent: React.FC = () => {
         return <ProfileScreen />;
       case 'community':
         return <CommunityDashboardScreen />;
+      case 'help':
+        return <HelpScreen />;
       default:
         return <DashboardScreen />;
     }

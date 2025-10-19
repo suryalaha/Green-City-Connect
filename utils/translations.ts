@@ -51,6 +51,7 @@ export const translations = {
     community: 'Community',
     payment: 'Payment',
     profile: 'Profile',
+    help: 'Help',
     
     // DashboardScreen
     dashboardSubtitle: "Here's an overview of your waste management.",
@@ -182,7 +183,6 @@ export const translations = {
     statusUnpaid: 'Unpaid',
     statusFailed: 'Failed',
 
-
     // ProfileScreen
     yourProfile: 'Your Profile',
     householdId: 'Unique Household ID',
@@ -224,5 +224,21 @@ export const translations = {
     cancel: 'Cancel',
     changePicture: 'Change Picture',
     profileUpdatedSuccess: 'Profile updated successfully!',
+
+    // Help/FAQ Screen
+    helpTitle: 'Help & FAQ',
+    helpSubtitle: 'Find answers to common questions below.',
+    faqQ1: 'Why was I fined for logging "Mixed Waste"?',
+    faqA1: 'To encourage proper waste segregation, a fine of ₹100 is automatically applied if you log "Mixed Waste" for three consecutive days. Please segregate your waste into Wet and Dry categories to avoid fines.',
+    faqQ2: 'How do I pay my outstanding balance?',
+    faqA2: 'Navigate to the "Payment" screen from the bottom navigation bar. You can view your outstanding balance and pay securely using UPI or QR code. If your balance is over ₹100, you can also make a partial payment.',
+    faqQ3: 'How can I change my address?',
+    faqA3: 'Go to the "Profile" screen, tap on "Edit Profile," update your address in the text field, and then tap "Save Changes." Your new address will be updated in our system.',
+    faqQ4: 'What is a "Special Collection Booking"?',
+    faqA4: 'This service is for large amounts of waste that are not part of your regular household collection, such as old furniture, garden waste, or waste from a party. You can book and pay for this service on the "Booking" screen.',
+    faqQ5: 'Can I cancel a Special Collection Booking?',
+    faqA5: 'Currently, bookings cannot be cancelled through the app once paid. Please contact our customer support for assistance with cancellations or rescheduling. You can find the contact number in the AI Assistant chat.',
+    faqQ6: 'What is the "Community Dashboard"?',
+    faqA6: 'The Community Dashboard shows the collective positive environmental impact of your locality. It displays data like total waste collected, recycled, and the amount of CO₂ saved, promoting community participation in sustainable practices.',
   },
 };

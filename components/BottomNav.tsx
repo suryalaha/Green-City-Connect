@@ -34,8 +34,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate }) => {
         { label: t('dashboard'), screen: 'dashboard' as Screen, icon: <HomeIcon /> },
         { label: t('tracking'), screen: 'tracking' as Screen, icon: <TruckIcon /> },
         { label: t('booking'), screen: 'booking' as Screen, icon: <CalendarIcon /> },
-        { label: t('community'), screen: 'community' as Screen, icon: <CommunityIcon /> },
         { label: t('payment'), screen: 'payment' as Screen, icon: <CreditCardIcon /> },
+        { label: t('help'), screen: 'help' as Screen, icon: <HelpCircleIcon /> },
         { label: t('profile'), screen: 'profile' as Screen, icon: <UserIcon /> },
     ];
 
@@ -66,9 +66,9 @@ const CalendarIcon = () => (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
 );
-const CommunityIcon = () => (
+const HelpCircleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.224-1.27-.624-1.742M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 0c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 const CreditCardIcon = () => (
