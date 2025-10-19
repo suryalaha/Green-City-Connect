@@ -167,6 +167,10 @@ const ProfileScreen: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-2">{t('address')}</h3>
                     <p>{user.address}</p>
                 </div>
+                 <div className="mt-6 border-t dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-semibold mb-2">{t('householdId')}</h3>
+                    <p className="font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-md">{user.householdId}</p>
+                </div>
             </Card>
 
             <Card className="mt-6">

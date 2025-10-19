@@ -5,6 +5,38 @@ export const translations = {
     // App general
     welcome: 'Welcome',
     
+    // Login & Sign Up
+    login: 'Login',
+    signUp: 'Sign Up',
+    email: 'Email',
+    password: 'Password',
+    passwordStrength: 'Password Strength',
+    passwordStrengthWeak: 'Weak',
+    passwordStrengthMedium: 'Medium',
+    passwordStrengthStrong: 'Strong',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    mobileNumber: 'Mobile Number',
+    address: 'Address',
+    sendOtp: 'Send OTP',
+    sent: 'Sent',
+    verify: 'Verify',
+    emailOtp: 'Email OTP',
+    mobileOtp: 'Mobile OTP',
+    otpSentAlert: 'OTP sent successfully! For testing, your OTP is 123456.',
+    emailVerifiedSuccess: 'Email verified successfully!',
+    mobileVerifiedSuccess: 'Mobile verified successfully!',
+    invalidOtp: 'Invalid OTP. Please try again.',
+    signupSuccessAlert: 'Registration Successful!',
+    yourHouseholdIdIs: 'Your new Household ID is:',
+    errorInvalidEmail: 'Please enter a valid email address.',
+    errorPasswordLength: 'Password must be at least 8 characters long.',
+    errorInvalidMobile: 'Please enter a valid Indian mobile number (e.g., +919876543210).',
+    errorVerifyBoth: 'Please verify both your email and mobile number to proceed.',
+    errorAllFieldsRequired: 'Please fill out all required fields.',
+
     // BottomNav
     dashboard: 'Dashboard',
     tracking: 'Tracking',
@@ -119,7 +151,7 @@ export const translations = {
 
     // ProfileScreen
     yourProfile: 'Your Profile',
-    address: 'Address',
+    householdId: 'Unique Household ID',
     language: 'Language',
     notifications: 'Notifications',
     pushNotifications: 'Push Notifications',

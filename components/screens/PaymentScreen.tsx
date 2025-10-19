@@ -1,6 +1,6 @@
 import React, { useState, useReducer } from 'react';
 import Card from '../ui/Card';
-import { Payment } from '../../types';
+import { Payment, User } from '../../types';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
 import jsPDF from 'jspdf';
@@ -125,7 +125,7 @@ const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: a
     );
 };
 
-const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: any) => string; }> = ({ onClose, payment, t }) => {
+const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user: User | null; t: (key: any) => string; }> = ({ onClose, payment, user, t }) => {
     const handleDownload = () => {
         const doc = new jsPDF();
 
@@ -154,6 +154,9 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (
 
         addDetail(`${t('transactionId')}:`, payment.id);
         addDetail(`${t('date')}:`, new Date(payment.date).toLocaleString());
+        if (user?.householdId) {
+            addDetail(`${t('householdId')}:`, user.householdId);
+        }
         addDetail(`${t('amountPaid')}:`, `₹${payment.amount.toFixed(2)}`);
         addDetail(`${t('paymentMethod')}:`, t('upi'));
         addDetail(`${t('status')}:`, t(payment.status).toUpperCase());
@@ -180,6 +183,9 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (
                 <div className="text-left bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm mb-6">
                     <div className="flex justify-between"><span>{t('transactionId')}:</span> <span className="font-mono">{payment.id}</span></div>
                     <div className="flex justify-between"><span>{t('date')}:</span> <span>{new Date(payment.date).toLocaleString()}</span></div>
+                    {user?.householdId && (
+                        <div className="flex justify-between"><span>{t('householdId')}:</span> <span className="font-mono">{user.householdId}</span></div>
+                    )}
                     <div className="flex justify-between"><span>{t('amountPaid')}:</span> <span className="font-bold">₹{payment.amount.toFixed(2)}</span></div>
                     <div className="flex justify-between"><span>{t('paymentMethod')}:</span> <span>{t('upi')}</span></div>
                     <div className="flex justify-between"><span>{t('status')}:</span> <span className="font-semibold text-green-600 dark:text-green-400 capitalize">{t(payment.status)}</span></div>
@@ -225,7 +231,7 @@ const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t
 
 const PaymentScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { outstandingBalance, payments, makePayment } = useAppContext();
+    const { user, outstandingBalance, payments, makePayment } = useAppContext();
     
     const [state, dispatch] = useReducer(paymentReducer, initialState);
     const [autoRenewal, setAutoRenewal] = useState(true);
@@ -269,7 +275,7 @@ const PaymentScreen: React.FC = () => {
             {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {state.modal === 'receipt' && state.activePayment && <ReceiptModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
             {state.modal === 'failed' && <PaymentFailedModal onClose={handleCloseAllModals} onRetry={handleRetryPayment} t={t} />}
-            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
+            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user} t={t} />}
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
@@ -314,11 +320,11 @@ const PaymentScreen: React.FC = () => {
 
             <Card className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">{t('paymentHistory')}</h2>
-                <ul className="space-y-2">
-                    {payments.map(p => {
+                <ul className="space-y-1">
+                    {payments.map((p, index) => {
                         const isPaid = p.status === 'paid';
                         return (
-                            <li key={p.id} className="flex justify-between items-center py-3 border-b dark:border-gray-700 last:border-b-0">
+                            <li key={p.id} className={`flex justify-between items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-gray-50 dark:bg-slate-700/50' : ''}`}>
                                 <div className="flex items-center space-x-4">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPaid ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
                                         {isPaid ? (

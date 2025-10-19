@@ -1,8 +1,11 @@
+import { GoogleGenAI } from "@google/genai";
+
 export interface User {
   id: string;
   name: string;
   email: string;
   address: string;
+  householdId: string;
 }
 
 export interface Message {
