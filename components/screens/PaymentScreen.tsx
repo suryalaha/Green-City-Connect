@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from 'react';
+import React, { useState, useReducer, useEffect } from 'react';
 import Card from '../ui/Card';
 import { Payment, User } from '../../types';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -62,7 +62,7 @@ function paymentReducer(state: State, action: Action): State {
 // --- UI COMPONENTS ---
 
 const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
     </svg>
@@ -76,7 +76,7 @@ const PaymentModal: React.FC<{ onClose: () => void; amount: number; upiId: strin
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-sm text-center relative">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 <h2 className="text-xl font-semibold mb-4">{t('scanToPay')}</h2>
                 <img src={qrCodeApiUrl} alt="UPI QR Code" className="mx-auto mb-4 border rounded-lg" />
@@ -105,7 +105,7 @@ const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: a
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-sm text-center">
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-10 h-10 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
@@ -177,7 +177,7 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-sm relative">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 <h2 className="text-2xl font-bold mb-4 text-center">{t('transactionReceipt')}</h2>
                 <div className="text-left bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm mb-6">
@@ -208,7 +208,7 @@ const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-sm text-center">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </div>
@@ -240,9 +240,40 @@ const PaymentScreen: React.FC = () => {
     const [reminderTime, setReminderTime] = useState('');
     const [activeReminder, setActiveReminder] = useState<{ date: string; time: string } | null>(null);
 
+    const [customAmount, setCustomAmount] = useState('');
+    const [amountError, setAmountError] = useState('');
+    const [amountToPay, setAmountToPay] = useState(outstandingBalance);
+
+    useEffect(() => {
+        setAmountToPay(outstandingBalance);
+        setCustomAmount('');
+        setAmountError('');
+    }, [outstandingBalance]);
+
+    const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setCustomAmount(value);
+        const numericValue = parseFloat(value);
+        
+        if (value === '') {
+            setAmountError('');
+            setAmountToPay(outstandingBalance);
+            return;
+        }
+
+        if (isNaN(numericValue) || numericValue <= 0) {
+            setAmountError(t('errorInvalidAmount'));
+        } else if (numericValue > outstandingBalance) {
+            setAmountError(t('errorAmountTooHigh').replace('{balance}', outstandingBalance.toFixed(2)));
+        } else {
+            setAmountError('');
+            setAmountToPay(numericValue);
+        }
+    };
 
     const handlePayNowClick = () => {
-        if (outstandingBalance > 0) {
+        if (amountError) return;
+        if (amountToPay > 0) {
             dispatch({ type: 'OPEN_PAYMENT_MODAL' });
         }
     };
@@ -250,7 +281,7 @@ const PaymentScreen: React.FC = () => {
     const handlePaymentModalClose = async () => {
         dispatch({ type: 'START_VERIFICATION' });
         try {
-            const newPayment = await makePayment(outstandingBalance);
+            const newPayment = await makePayment(amountToPay);
             dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
         } catch (failedPayment) {
             dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
@@ -264,7 +295,7 @@ const PaymentScreen: React.FC = () => {
     const handleRetryPayment = async () => {
         dispatch({ type: 'RETRY_PAYMENT' });
         try {
-            const newPayment = await makePayment(outstandingBalance);
+            const newPayment = await makePayment(amountToPay);
             dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
         } catch (failedPayment) {
             dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
@@ -297,14 +328,14 @@ const PaymentScreen: React.FC = () => {
 
     return (
         <div>
-            {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
+            {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={amountToPay} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {state.modal === 'receipt' && state.activePayment && <ReceiptModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
             {state.modal === 'failed' && <PaymentFailedModal onClose={handleCloseAllModals} onRetry={handleRetryPayment} t={t} />}
             {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user} t={t} />}
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
-                <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h2 className="text-xl font-semibold">{t('outstandingBalance')}</h2>
                         <p className={`text-3xl font-bold ${outstandingBalance > 0 ? 'text-red-500' : 'text-green-500'}`}>
@@ -313,8 +344,8 @@ const PaymentScreen: React.FC = () => {
                     </div>
                     <button 
                         onClick={handlePayNowClick}
-                        disabled={state.isVerifying || outstandingBalance <= 0}
-                        className="bg-primary dark:bg-dark-primary text-white px-8 py-3 rounded-lg hover:bg-primary-dark text-center font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
+                        disabled={state.isVerifying || amountToPay <= 0 || !!amountError}
+                        className="bg-primary dark:bg-dark-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark text-center font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
                     >
                          {state.isVerifying ? (
                             <>
@@ -325,10 +356,24 @@ const PaymentScreen: React.FC = () => {
                                 {t('verifyingPayment')}
                             </>
                          ) : (
-                            t('payNow')
+                            `${t('payNow')} ₹${amountToPay.toFixed(2)}`
                          )}
                     </button>
                 </div>
+                 {outstandingBalance > 100 && (
+                    <div className="mt-4 pt-4 border-t dark:border-gray-700">
+                        <label htmlFor="custom-amount" className="block text-sm font-medium mb-1">{t('enterCustomAmount')}</label>
+                        <input
+                            id="custom-amount"
+                            type="number"
+                            value={customAmount}
+                            onChange={handleCustomAmountChange}
+                            placeholder={`Max: ₹${outstandingBalance.toFixed(2)}`}
+                            className={`w-full sm:w-1/2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ${amountError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`}
+                        />
+                        {amountError && <p className="text-red-500 text-xs mt-1">{amountError}</p>}
+                    </div>
+                )}
             </Card>
 
             <Card className="mt-6">

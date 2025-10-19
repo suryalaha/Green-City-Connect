@@ -90,7 +90,7 @@ export const translations = {
     chatbotGreetingEvening: 'Good evening! What can I help you with?',
 
     // PaymentScreen
-    payNow: 'Pay Now',
+    payNow: 'Pay',
     verifyingPayment: 'Verifying...',
     makePayment: 'Pay via UPI App',
     showQRCode: 'Show QR Code',
@@ -135,6 +135,9 @@ export const translations = {
     selectReminderTime: 'Select Time',
     errorSetReminderDateTime: 'Please select both a date and time for the reminder.',
     reminderSetSuccess: 'Reminder set successfully for {date} at {time}.',
+    enterCustomAmount: 'Or enter a different amount to pay',
+    errorInvalidAmount: 'Please enter a valid amount greater than zero.',
+    errorAmountTooHigh: 'Amount cannot be greater than your balance of ₹{balance}.',
 
     // CommunityDashboardScreen
     communityDashboard: 'Community Dashboard',
