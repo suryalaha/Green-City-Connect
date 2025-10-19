@@ -84,11 +84,15 @@ export const translations = {
     upi: 'UPI',
     done: 'Done',
     downloadReceipt: 'Download Receipt',
+    download: 'Download',
     downloading: 'Downloading receipt for transaction',
     paymentFailed: 'Payment Failed',
     paymentFailedDesc: 'We were unable to process your payment. Please try again.',
     tryAgain: 'Try Again',
     securePayment: 'Secure & PCI-DSS Compliant',
+    transactionReceipt: 'Transaction Receipt',
+    status: 'Status',
+    downloadPdf: 'Download PDF',
 
     // CommunityDashboardScreen
     communityDashboard: 'Community Dashboard',

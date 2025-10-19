@@ -68,6 +68,38 @@ const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: a
     );
 };
 
+const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: any) => string; }> = ({ onClose, payment, t }) => {
+    const handleDownload = () => {
+        alert(`${t('downloading')} ${payment.id}.pdf`);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-sm relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <h2 className="text-2xl font-bold mb-4 text-center">{t('transactionReceipt')}</h2>
+                <div className="text-left bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm mb-6">
+                    <div className="flex justify-between"><span>{t('transactionId')}:</span> <span className="font-mono">{payment.id}</span></div>
+                    <div className="flex justify-between"><span>{t('date')}:</span> <span>{new Date(payment.date).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>{t('amountPaid')}:</span> <span className="font-bold">₹{payment.amount.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>{t('paymentMethod')}:</span> <span>{t('upi')}</span></div>
+                    <div className="flex justify-between"><span>{t('status')}:</span> <span className="font-semibold text-green-600 dark:text-green-400 capitalize">{t(payment.status)}</span></div>
+                </div>
+                <div className="flex space-x-4">
+                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-600 text-foreground dark:text-dark-foreground py-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                        {t('close')}
+                    </button>
+                    <button onClick={handleDownload} className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+                        {t('downloadPdf')}
+                    </button>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
 const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t: (key: any) => string; }> = ({ onClose, onRetry, t }) => {
     const handleRetry = () => {
         onClose();
@@ -105,6 +137,7 @@ const PaymentScreen: React.FC = () => {
     const [showFailedModal, setShowFailedModal] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [completedPayment, setCompletedPayment] = useState<Payment | null>(null);
+    const [receiptForPayment, setReceiptForPayment] = useState<Payment | null>(null);
     const [autoRenewal, setAutoRenewal] = useState(true);
 
     const handlePayNowClick = () => {
@@ -133,15 +166,12 @@ const PaymentScreen: React.FC = () => {
         setCompletedPayment(null);
     };
 
-    const handleDownloadReceipt = (paymentId: string) => {
-        alert(`${t('downloading')} ${paymentId}.pdf`);
-    };
-
     return (
         <div>
             {showPaymentModal && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {showReceiptModal && completedPayment && <ReceiptModal onClose={handleReceiptModalClose} payment={completedPayment} t={t} />}
             {showFailedModal && <PaymentFailedModal onClose={() => setShowFailedModal(false)} onRetry={handlePayNowClick} t={t} />}
+            {receiptForPayment && <ReceiptDetailModal onClose={() => setReceiptForPayment(null)} payment={receiptForPayment} t={t} />}
 
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
@@ -213,10 +243,11 @@ const PaymentScreen: React.FC = () => {
                                     </div>
                                 </div>
                                 {isPaid && (
-                                    <button onClick={() => handleDownloadReceipt(p.id)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={t('downloadReceipt')}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <button onClick={() => setReceiptForPayment(p)} className="flex items-center space-x-1 text-sm text-primary dark:text-dark-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-light rounded-md p-1" aria-label={`${t('downloadReceipt')} for ${p.id}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                                         </svg>
+                                        <span>{t('download')}</span>
                                     </button>
                                 )}
                             </li>

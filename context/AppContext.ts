@@ -136,7 +136,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // Simulate network delay and potential failure
       setTimeout(() => {
-        const isSuccess = Math.random() > 0.2; // 80% success rate
+        const isSuccess = false; // Always fail for testing
 
         if (isSuccess) {
           const successfulPayment: Payment = { ...basePayment, status: 'paid' };
