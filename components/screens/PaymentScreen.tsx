@@ -1,9 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useReducer } from 'react';
 import Card from '../ui/Card';
 import { Payment } from '../../types';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
 import jsPDF from 'jspdf';
+
+// --- STATE MANAGEMENT (useReducer) ---
+
+interface State {
+  modal: 'none' | 'payment' | 'receipt' | 'failed' | 'details';
+  isVerifying: boolean;
+  activePayment: Payment | null; // For receipt, failed, or details modal
+}
+
+type Action =
+  | { type: 'OPEN_PAYMENT_MODAL' }
+  | { type: 'START_VERIFICATION' }
+  | { type: 'VERIFICATION_SUCCESS'; payload: Payment }
+  | { type: 'VERIFICATION_FAILURE'; payload: Payment }
+  | { type: 'RETRY_PAYMENT' }
+  | { type: 'OPEN_RECEIPT_DETAILS'; payload: Payment }
+  | { type: 'CLOSE_ALL_MODALS' };
+
+const initialState: State = {
+  modal: 'none',
+  isVerifying: false,
+  activePayment: null,
+};
+
+function paymentReducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'OPEN_PAYMENT_MODAL':
+      return { ...state, modal: 'payment' };
+    case 'START_VERIFICATION':
+      return { ...state, modal: 'none', isVerifying: true, activePayment: null };
+    case 'VERIFICATION_SUCCESS':
+      return {
+        ...state,
+        isVerifying: false,
+        modal: 'receipt',
+        activePayment: action.payload,
+      };
+    case 'VERIFICATION_FAILURE':
+      return {
+        ...state,
+        isVerifying: false,
+        modal: 'failed',
+        activePayment: action.payload,
+      };
+    case 'RETRY_PAYMENT':
+      return { ...state, modal: 'none', isVerifying: true, activePayment: null };
+    case 'OPEN_RECEIPT_DETAILS':
+      return { ...state, modal: 'details', activePayment: action.payload };
+    case 'CLOSE_ALL_MODALS':
+      return { ...state, modal: 'none', activePayment: null };
+    default:
+      return state;
+  }
+}
+
+// --- UI COMPONENTS ---
 
 const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -165,66 +221,55 @@ const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t
     );
 };
 
+// --- MAIN COMPONENT ---
+
 const PaymentScreen: React.FC = () => {
     const { t } = useTranslations();
     const { outstandingBalance, payments, makePayment } = useAppContext();
     
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showReceiptModal, setShowReceiptModal] = useState(false);
-    const [showFailedModal, setShowFailedModal] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [completedPayment, setCompletedPayment] = useState<Payment | null>(null);
-    const [receiptForPayment, setReceiptForPayment] = useState<Payment | null>(null);
+    const [state, dispatch] = useReducer(paymentReducer, initialState);
     const [autoRenewal, setAutoRenewal] = useState(true);
 
     const handlePayNowClick = () => {
         if (outstandingBalance > 0) {
-            setShowPaymentModal(true);
+            dispatch({ type: 'OPEN_PAYMENT_MODAL' });
         }
     };
 
     const handlePaymentModalClose = async () => {
-        setShowPaymentModal(false);
-        setIsVerifying(true);
+        dispatch({ type: 'START_VERIFICATION' });
         try {
             const newPayment = await makePayment(outstandingBalance);
-            setCompletedPayment(newPayment);
-            setShowReceiptModal(true);
+            dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
         } catch (failedPayment) {
-            setCompletedPayment(failedPayment as Payment);
-            setShowFailedModal(true);
-        } finally {
-            setIsVerifying(false);
+            dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
         }
     };
     
-    const handleReceiptModalClose = () => {
-        setShowReceiptModal(false);
-        setCompletedPayment(null);
+    const handleCloseAllModals = () => {
+        dispatch({ type: 'CLOSE_ALL_MODALS' });
     };
 
     const handleRetryPayment = async () => {
-        setShowFailedModal(false);
-        setIsVerifying(true);
+        dispatch({ type: 'RETRY_PAYMENT' });
         try {
             const newPayment = await makePayment(outstandingBalance);
-            setCompletedPayment(newPayment);
-            setShowReceiptModal(true);
+            dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
         } catch (failedPayment) {
-            setCompletedPayment(failedPayment as Payment);
-            setShowFailedModal(true);
-        } finally {
-            setIsVerifying(false);
+            dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
         }
+    };
+
+    const handleViewReceiptDetails = (payment: Payment) => {
+        dispatch({ type: 'OPEN_RECEIPT_DETAILS', payload: payment });
     };
 
     return (
         <div>
-            {showPaymentModal && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
-            {showReceiptModal && completedPayment && <ReceiptModal onClose={handleReceiptModalClose} payment={completedPayment} t={t} />}
-            {showFailedModal && <PaymentFailedModal onClose={() => setShowFailedModal(false)} onRetry={handleRetryPayment} t={t} />}
-            {receiptForPayment && <ReceiptDetailModal onClose={() => setReceiptForPayment(null)} payment={receiptForPayment} t={t} />}
-
+            {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
+            {state.modal === 'receipt' && state.activePayment && <ReceiptModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
+            {state.modal === 'failed' && <PaymentFailedModal onClose={handleCloseAllModals} onRetry={handleRetryPayment} t={t} />}
+            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
@@ -237,10 +282,10 @@ const PaymentScreen: React.FC = () => {
                     </div>
                     <button 
                         onClick={handlePayNowClick}
-                        disabled={isVerifying || outstandingBalance <= 0}
+                        disabled={state.isVerifying || outstandingBalance <= 0}
                         className="bg-primary dark:bg-dark-primary text-white px-8 py-3 rounded-lg hover:bg-primary-dark text-center font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
                     >
-                         {isVerifying ? (
+                         {state.isVerifying ? (
                             <>
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -295,7 +340,7 @@ const PaymentScreen: React.FC = () => {
                                     </div>
                                 </div>
                                 {isPaid && (
-                                    <button onClick={() => setReceiptForPayment(p)} className="flex items-center space-x-1 text-sm text-primary dark:text-dark-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-light rounded-md p-1" aria-label={`${t('downloadReceipt')} for ${p.id}`}>
+                                    <button onClick={() => handleViewReceiptDetails(p)} className="flex items-center space-x-1 text-sm text-primary dark:text-dark-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-light rounded-md p-1" aria-label={`${t('downloadReceipt')} for ${p.id}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                                         </svg>
