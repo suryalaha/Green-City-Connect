@@ -3,6 +3,7 @@ import Card from '../ui/Card';
 import { Payment } from '../../types';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
+import jsPDF from 'jspdf';
 
 const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -70,7 +71,47 @@ const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: a
 
 const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: any) => string; }> = ({ onClose, payment, t }) => {
     const handleDownload = () => {
-        alert(`${t('downloading')} ${payment.id}.pdf`);
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Green City Connect', 105, 20, { align: 'center' });
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Transaction Receipt', 105, 30, { align: 'center' });
+
+        // Line separator
+        doc.setLineWidth(0.5);
+        doc.line(20, 35, 190, 35);
+
+        // Transaction Details
+        doc.setFontSize(12);
+        let yPos = 50;
+        const addDetail = (label: string, value: string) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, 20, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(value, 80, yPos);
+            yPos += 10;
+        };
+
+        addDetail(`${t('transactionId')}:`, payment.id);
+        addDetail(`${t('date')}:`, new Date(payment.date).toLocaleString());
+        addDetail(`${t('amountPaid')}:`, `₹${payment.amount.toFixed(2)}`);
+        addDetail(`${t('paymentMethod')}:`, t('upi'));
+        addDetail(`${t('status')}:`, t(payment.status).toUpperCase());
+
+        // Line separator
+        doc.line(20, yPos, 190, yPos);
+        yPos += 15;
+
+        // Footer
+        doc.setFontSize(10);
+        doc.text('Thank you for your payment!', 105, yPos, { align: 'center' });
+
+        // Save the PDF
+        doc.save(`receipt-${payment.id}.pdf`);
     };
 
     return (
@@ -101,10 +142,6 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; t: (
 };
 
 const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t: (key: any) => string; }> = ({ onClose, onRetry, t }) => {
-    const handleRetry = () => {
-        onClose();
-        onRetry();
-    };
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-sm text-center">
@@ -119,7 +156,7 @@ const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t
                     <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-600 text-foreground dark:text-dark-foreground py-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
                         {t('close')}
                     </button>
-                    <button onClick={handleRetry} className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+                    <button onClick={onRetry} className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
                         {t('tryAgain')}
                     </button>
                 </div>
@@ -166,11 +203,26 @@ const PaymentScreen: React.FC = () => {
         setCompletedPayment(null);
     };
 
+    const handleRetryPayment = async () => {
+        setShowFailedModal(false);
+        setIsVerifying(true);
+        try {
+            const newPayment = await makePayment(outstandingBalance);
+            setCompletedPayment(newPayment);
+            setShowReceiptModal(true);
+        } catch (failedPayment) {
+            setCompletedPayment(failedPayment as Payment);
+            setShowFailedModal(true);
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
     return (
         <div>
             {showPaymentModal && <PaymentModal onClose={handlePaymentModalClose} amount={outstandingBalance} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {showReceiptModal && completedPayment && <ReceiptModal onClose={handleReceiptModalClose} payment={completedPayment} t={t} />}
-            {showFailedModal && <PaymentFailedModal onClose={() => setShowFailedModal(false)} onRetry={handlePayNowClick} t={t} />}
+            {showFailedModal && <PaymentFailedModal onClose={() => setShowFailedModal(false)} onRetry={handleRetryPayment} t={t} />}
             {receiptForPayment && <ReceiptDetailModal onClose={() => setReceiptForPayment(null)} payment={receiptForPayment} t={t} />}
 
 
