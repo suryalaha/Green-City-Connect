@@ -37,6 +37,12 @@ export const translations = {
     errorInvalidMobile: 'Please enter a valid Indian mobile number (e.g., +919876543210).',
     errorVerifyBoth: 'Please verify both your email and mobile number to proceed.',
     errorAllFieldsRequired: 'Please fill out all required fields.',
+    errorFirstNameRequired: 'First name is required.',
+    errorLastNameRequired: 'Last name is required.',
+    errorAddressMinLength: 'Address must be at least 10 characters long.',
+    errorPasswordWeak: 'Password is too weak. Please include uppercase, lowercase, numbers, and symbols.',
+    errorVerifyEmail: 'Please verify your email address.',
+    errorVerifyMobile: 'Please verify your mobile number.',
 
     // BottomNav
     dashboard: 'Dashboard',

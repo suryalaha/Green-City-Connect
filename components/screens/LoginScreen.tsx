@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { User } from '../../types';
 import Card from '../ui/Card';
@@ -6,14 +6,14 @@ import { useTranslations } from '../../hooks/useTranslations';
 
 // SVG Icon Components for password visibility toggle
 const EyeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400">
         <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
         <circle cx="12" cy="12" r="3" />
     </svg>
 );
 
 const EyeOffIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400">
         <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
         <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
         <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
@@ -78,7 +78,54 @@ const LoginScreen: React.FC = () => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [signUpErrors, setSignUpErrors] = useState<Record<string, string>>({});
+  const [isFormValid, setIsFormValid] = useState(false);
+
+
+  const checkPasswordStrength = (password: string): 'none' | 'weak' | 'medium' | 'strong' => {
+      if (!password) return 'none';
+      
+      let score = 0;
+      if (password.length >= 8) score++;
+      if (/[a-z]/.test(password)) score++;
+      if (/[A-Z]/.test(password)) score++;
+      if (/[0-9]/.test(password)) score++;
+      if (/[^A-Za-z0-9]/.test(password)) score++;
+
+      if (score < 3) return 'weak';
+      if (score <= 4) return 'medium';
+      return 'strong';
+  };
+
+  const validateSignUp = (): boolean => {
+      const errors: Record<string, string> = {};
+      
+      if (!firstName.trim()) errors.firstName = t('errorFirstNameRequired');
+      if (!lastName.trim()) errors.lastName = t('errorLastNameRequired');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signUpEmail)) errors.signUpEmail = t('errorInvalidEmail');
+      if (!/^\+91[7-9][0-9]{9}$/.test(mobile)) errors.mobile = t('errorInvalidMobile');
+      if (address.trim().length < 10) errors.address = t('errorAddressMinLength');
+      
+      const strength = checkPasswordStrength(signUpPassword);
+      if (strength === 'weak' || strength === 'none') {
+        errors.signUpPassword = t('errorPasswordWeak');
+      }
+
+      if (!isEmailVerified) errors.emailOtp = t('errorVerifyEmail');
+      if (!isMobileVerified) errors.mobileOtp = t('errorVerifyMobile');
+
+      setSignUpErrors(errors);
+      const isValid = Object.keys(errors).length === 0;
+      setIsFormValid(isValid);
+      return isValid;
+  };
+
+  useEffect(() => {
+    // Re-validate form whenever a sign-up field changes
+    if (!isLoginView) {
+        validateSignUp();
+    }
+  }, [firstName, lastName, signUpEmail, mobile, address, signUpPassword, isEmailVerified, isMobileVerified, isLoginView]);
 
 
   const validateLogin = () => {
@@ -116,7 +163,7 @@ const LoginScreen: React.FC = () => {
   const handleSendOtp = (type: 'email' | 'mobile') => {
     if (type === 'email') {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signUpEmail)) {
-            alert(t('errorInvalidEmail'));
+            setSignUpErrors(prev => ({ ...prev, signUpEmail: t('errorInvalidEmail')}));
             return;
         }
         setEmailOtpSent(true);
@@ -124,7 +171,7 @@ const LoginScreen: React.FC = () => {
     }
     if (type === 'mobile') {
         if (!/^\+91[7-9][0-9]{9}$/.test(mobile)) {
-            alert(t('errorInvalidMobile'));
+            setSignUpErrors(prev => ({ ...prev, mobile: t('errorInvalidMobile')}));
             return;
         }
         setMobileOtpSent(true);
@@ -166,12 +213,7 @@ const LoginScreen: React.FC = () => {
 
   const handleSignUp = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!isEmailVerified || !isMobileVerified) {
-          alert(t('errorVerifyBoth'));
-          return;
-      }
-      if (!firstName || !lastName || !address || !signUpPassword) {
-          alert(t('errorAllFieldsRequired'));
+      if (!validateSignUp()) {
           return;
       }
 
@@ -187,25 +229,14 @@ const LoginScreen: React.FC = () => {
       login(newUser);
   };
   
-  const checkPasswordStrength = (password: string): 'none' | 'weak' | 'medium' | 'strong' => {
-      if (!password) return 'none';
-      
-      let score = 0;
-      if (password.length >= 8) score++;
-      if (/[a-z]/.test(password)) score++;
-      if (/[A-Z]/.test(password)) score++;
-      if (/[0-9]/.test(password)) score++;
-      if (/[^A-Za-z0-9]/.test(password)) score++;
-
-      if (score < 3) return 'weak';
-      if (score <= 4) return 'medium';
-      return 'strong';
-  };
-
   const handleSignUpPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newPassword = e.target.value;
       setSignUpPassword(newPassword);
       setPasswordStrength(checkPasswordStrength(newPassword));
+  };
+  
+  const getInputClass = (fieldName: string) => {
+    return `w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 ${signUpErrors[fieldName] ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`;
   };
 
   return (
@@ -266,22 +297,25 @@ const LoginScreen: React.FC = () => {
         ) : (
           <form onSubmit={handleSignUp} noValidate className="space-y-4">
             <div className="flex space-x-4">
-                <div>
+                <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('firstName')}</label>
-                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required />
+                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className={getInputClass('firstName')} required />
+                    {signUpErrors.firstName && <p className="text-red-500 text-xs mt-1">{signUpErrors.firstName}</p>}
                 </div>
-                <div>
+                <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('lastName')}</label>
-                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required />
+                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className={getInputClass('lastName')} required />
+                    {signUpErrors.lastName && <p className="text-red-500 text-xs mt-1">{signUpErrors.lastName}</p>}
                 </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">{t('email')}</label>
               <div className="flex">
-                  <input type="email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} className="w-full p-2 border rounded-l-md dark:bg-gray-700 dark:border-gray-600" required disabled={emailOtpSent}/>
+                  <input type="email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} className={`${getInputClass('signUpEmail')} rounded-r-none`} required disabled={emailOtpSent}/>
                   <button type="button" onClick={() => handleSendOtp('email')} disabled={emailOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm disabled:bg-gray-400">{emailOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
+               {signUpErrors.signUpEmail && <p className="text-red-500 text-xs mt-1">{signUpErrors.signUpEmail}</p>}
             </div>
             {emailOtpSent && !isEmailVerified && (
               <div>
@@ -296,9 +330,10 @@ const LoginScreen: React.FC = () => {
             <div>
               <label className="block text-sm font-medium mb-1">{t('mobileNumber')}</label>
                <div className="flex">
-                  <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+91" className="w-full p-2 border rounded-l-md dark:bg-gray-700 dark:border-gray-600" required disabled={mobileOtpSent}/>
+                  <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+91" className={`${getInputClass('mobile')} rounded-r-none`} required disabled={mobileOtpSent}/>
                   <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm disabled:bg-gray-400">{mobileOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
+               {signUpErrors.mobile && <p className="text-red-500 text-xs mt-1">{signUpErrors.mobile}</p>}
             </div>
              {mobileOtpSent && !isMobileVerified && (
               <div>
@@ -316,10 +351,11 @@ const LoginScreen: React.FC = () => {
                 value={address} 
                 onChange={e => setAddress(e.target.value)} 
                 rows={2} 
-                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+                className={getInputClass('address')} 
                 required 
                 placeholder={t('addressPlaceholder')}
               />
+               {signUpErrors.address && <p className="text-red-500 text-xs mt-1">{signUpErrors.address}</p>}
             </div>
 
             <div>
@@ -329,15 +365,16 @@ const LoginScreen: React.FC = () => {
                 type="password" 
                 value={signUpPassword} 
                 onChange={handleSignUpPasswordChange} 
-                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+                className={getInputClass('signUpPassword')}
                 required 
               />
+               {signUpErrors.signUpPassword && <p className="text-red-500 text-xs mt-1">{signUpErrors.signUpPassword}</p>}
               <PasswordStrengthIndicator strength={passwordStrength} t={t} />
             </div>
 
             <button
               type="submit"
-              disabled={!isEmailVerified || !isMobileVerified}
+              disabled={!isFormValid}
               className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors disabled:bg-gray-400"
             >
               {t('signUp')}
