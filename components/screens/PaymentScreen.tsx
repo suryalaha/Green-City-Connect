@@ -235,6 +235,11 @@ const PaymentScreen: React.FC = () => {
     
     const [state, dispatch] = useReducer(paymentReducer, initialState);
     const [autoRenewal, setAutoRenewal] = useState(true);
+    const [isReminderEnabled, setIsReminderEnabled] = useState(false);
+    const [reminderDate, setReminderDate] = useState('');
+    const [reminderTime, setReminderTime] = useState('');
+    const [activeReminder, setActiveReminder] = useState<{ date: string; time: string } | null>(null);
+
 
     const handlePayNowClick = () => {
         if (outstandingBalance > 0) {
@@ -268,6 +273,26 @@ const PaymentScreen: React.FC = () => {
 
     const handleViewReceiptDetails = (payment: Payment) => {
         dispatch({ type: 'OPEN_RECEIPT_DETAILS', payload: payment });
+    };
+
+    const handleSetReminder = () => {
+        if (!reminderDate || !reminderTime) {
+            alert(t('errorSetReminderDateTime'));
+            return;
+        }
+        const newReminder = { date: reminderDate, time: reminderTime };
+        setActiveReminder(newReminder);
+        setReminderDate('');
+        setReminderTime('');
+        alert(t('reminderSetSuccess').replace('{date}', new Date(newReminder.date).toLocaleDateString()).replace('{time}', newReminder.time));
+    };
+    
+    const handleToggleReminder = () => {
+        const newEnabledState = !isReminderEnabled;
+        setIsReminderEnabled(newEnabledState);
+        if (!newEnabledState) {
+            setActiveReminder(null); // Clear reminder when disabled
+        }
     };
 
     return (
@@ -316,6 +341,49 @@ const PaymentScreen: React.FC = () => {
                     </label>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('autoRenewalDesc')}</p>
+            </Card>
+
+            <Card className="mt-6">
+                <h2 className="text-xl font-semibold mb-2">{t('paymentReminders')}</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <span>{t('enableReminders')}</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={isReminderEnabled} onChange={handleToggleReminder} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+                {isReminderEnabled && (
+                    <div className="border-t dark:border-gray-700 pt-4">
+                        {activeReminder ? (
+                            <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-md text-center text-sm text-green-800 dark:text-green-200">
+                                <p>{t('reminderSetFor')} <strong>{new Date(activeReminder.date).toLocaleDateString()}</strong> at <strong>{activeReminder.time}</strong></p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('paymentReminderDesc')}</p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <input
+                                        type="date"
+                                        value={reminderDate}
+                                        onChange={(e) => setReminderDate(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+                                        aria-label={t('selectReminderDate')}
+                                    />
+                                    <input
+                                        type="time"
+                                        value={reminderTime}
+                                        onChange={(e) => setReminderTime(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+                                        aria-label={t('selectReminderTime')}
+                                    />
+                                </div>
+                                <button onClick={handleSetReminder} className="w-full bg-secondary text-white py-2 rounded-md hover:opacity-90 transition-colors">
+                                    {t('setReminder')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Card>
 
             <Card className="mt-6">

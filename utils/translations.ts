@@ -125,6 +125,16 @@ export const translations = {
     transactionReceipt: 'Transaction Receipt',
     status: 'Status',
     downloadPdf: 'Download PDF',
+    paymentReminders: 'Payment Reminders',
+    enableReminders: 'Enable Payment Reminders',
+    paymentReminderDesc: 'Set a reminder to pay your bill on time.',
+    setReminder: 'Set Reminder',
+    reminderSetFor: 'Reminder set for',
+    clearReminder: 'Clear Reminder',
+    selectReminderDate: 'Select Date',
+    selectReminderTime: 'Select Time',
+    errorSetReminderDateTime: 'Please select both a date and time for the reminder.',
+    reminderSetSuccess: 'Reminder set successfully for {date} at {time}.',
 
     // CommunityDashboardScreen
     communityDashboard: 'Community Dashboard',
