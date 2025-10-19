@@ -9,6 +9,10 @@ const faqs = [
     { q: 'faqQ4', a: 'faqA4' },
     { q: 'faqQ5', a: 'faqA5' },
     { q: 'faqQ6', a: 'faqA6' },
+    { q: 'faqQ7', a: 'faqA7' },
+    { q: 'faqQ8', a: 'faqA8' },
+    { q: 'faqQ9', a: 'faqA9' },
+    { q: 'faqQ10', a: 'faqA10' },
 ];
 
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
