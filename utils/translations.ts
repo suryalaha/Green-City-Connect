@@ -1,0 +1,112 @@
+// FIX: Implement the missing translations object.
+
+export const translations = {
+  en: {
+    // App general
+    welcome: 'Welcome',
+    
+    // BottomNav
+    dashboard: 'Dashboard',
+    tracking: 'Tracking',
+    booking: 'Booking',
+    community: 'Community',
+    payment: 'Payment',
+    profile: 'Profile',
+    
+    // DashboardScreen
+    dashboardSubtitle: "Here's an overview of your waste management.",
+    nextPickup: 'Next Pickup',
+    generalWasteRecycling: 'General Waste & Recycling',
+    outstandingBalance: 'Outstanding Balance',
+    paymentDue: 'Payment is due.',
+    noOutstanding: 'All cleared!',
+    logYourWaste: 'Log Your Waste',
+    wasteLogDescription: 'Log your daily waste type. A fine of ₹100 is applied after three consecutive "Mixed Waste" logs.',
+    wetWaste: 'Wet Waste',
+    dryWaste: 'Dry Waste',
+    mixedWaste: 'Mixed Waste',
+    logSuccess: 'Successfully logged {type} waste.',
+    consecutiveFineMessage: 'A fine of ₹100 has been applied for 3 consecutive mixed waste logs. Please segregate your waste.',
+    supportACause: 'Support a Cause',
+    supportACauseDesc: 'Watch a 30-second ad to contribute to local eco-friendly initiatives.',
+    watchAd: 'Watch an Ad (30s)',
+    watchingAd: 'Watching ad...',
+    thankYou: 'Thank You!',
+
+    // Chatbot
+    chatbotGreetingMorning: 'Good morning! How can I help you with your waste management today?',
+    chatbotGreetingAfternoon: 'Good afternoon! How can I assist you?',
+    chatbotGreetingEvening: 'Good evening! What can I help you with?',
+
+    // PaymentScreen
+    makePayment: 'Make Payment',
+    showQRCode: 'Show QR Code',
+    autoRenewalSettings: 'Auto-Renewal Settings',
+    enableAutoRenewal: 'Enable Auto-Renewal',
+    autoRenewalDesc: 'Your monthly fee will be automatically deducted.',
+    paymentHistory: 'Payment History',
+    paymentOn: 'Payment on',
+    paid: 'Paid',
+    scanToPay: 'Scan to Pay',
+    payingTo: 'Paying to',
+    amount: 'Amount',
+    monthlyFee: 'Monthly Waste Management Fee',
+    close: 'Close',
+
+    // CommunityDashboardScreen
+    communityDashboard: 'Community Dashboard',
+    localityImpact: "Your locality's positive impact this month.",
+    totalWasteCollected: 'Total Waste Collected',
+    totalRecycled: 'Total Recycled',
+    co2Saved: 'CO₂ Saved',
+    ngoTransparency: 'NGO Transparency Reports',
+    reportFor: 'Report for',
+    viewReport: 'View Report',
+
+    // BookingScreen
+    specialCollectionBooking: 'Special Collection Booking',
+    bookForEvents: 'Book a special collection for parties, events, or bulk waste.',
+    selectDate: 'Select Date',
+    selectTime: 'Select Time',
+    additionalNotes: 'Additional Notes',
+    notesPlaceholder: 'e.g., "Large cardboard boxes from moving"',
+    bookingReminders: 'Booking Reminders',
+    bookingReminderDesc: 'Get a reminder 24 hours before the pickup.',
+    confirmBooking: 'Confirm Booking',
+    bookingConfirmed: 'Booking Confirmed!',
+    bookingConfirmedDesc: 'Your special collection is scheduled for {date} at {time}.',
+
+    // ProfileScreen
+    yourProfile: 'Your Profile',
+    address: 'Address',
+    language: 'Language',
+    notifications: 'Notifications',
+    pushNotifications: 'Push Notifications',
+    emailNotifications: 'Email Notifications',
+    smsNotifications: 'SMS Notifications',
+    logout: 'Logout',
+    greenBadge: 'Green Badge',
+    myComplaints: 'My Complaints',
+    fileNewComplaint: 'File a New Complaint',
+    complaintDate: 'Date',
+    complaintIssue: 'Issue',
+    complaintStatus: 'Status',
+    noComplaints: 'You have not filed any complaints yet.',
+    fileComplaintTitle: 'File a New Complaint',
+    issueType: 'Issue Type',
+    description: 'Description',
+    describeIssuePlaceholder: 'Please describe the issue in detail...',
+    uploadPhoto: 'Upload Photo (Optional)',
+    submitComplaint: 'Submit Complaint',
+    complaintSubmittedSuccess: 'Complaint submitted successfully!',
+    issueMissedPickup: 'Missed Pickup',
+    issueService: 'Service Issue',
+    issueOther: 'Other',
+    statusSubmitted: 'Submitted',
+    statusInProgress: 'In Progress',
+    statusResolved: 'Resolved',
+    settings: 'Settings',
+    darkMode: 'Dark Mode',
+  },
+  // Add other languages here if needed
+};
