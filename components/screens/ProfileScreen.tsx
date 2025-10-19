@@ -1,5 +1,5 @@
 // FIX: Implement the missing ProfileScreen component.
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -8,7 +8,7 @@ import { Complaint } from '../../types';
 const GreenBadge: React.FC = () => {
     const { t } = useTranslations();
     return (
-        <div className="mt-4 flex items-center space-x-2 rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1">
+        <div className="mt-2 flex items-center space-x-2 rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 w-fit">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
@@ -64,7 +64,7 @@ const ComplaintModal: React.FC<{
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-lg relative">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 <h2 className="text-2xl font-bold mb-6 text-center">{t('fileComplaintTitle')}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,10 +97,18 @@ const ComplaintModal: React.FC<{
 };
 
 const ProfileScreen: React.FC = () => {
-    const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme } = useAppContext();
+    const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser } = useAppContext();
     const { t, language, setLanguage } = useTranslations();
+    
     const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
     const [feedback, setFeedback] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    
+    const [editedName, setEditedName] = useState(user?.name || '');
+    const [editedEmail, setEditedEmail] = useState(user?.email || '');
+    const [editedAddress, setEditedAddress] = useState(user?.address || '');
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [notifications, setNotifications] = useState({
         push: true,
@@ -142,6 +150,41 @@ const ProfileScreen: React.FC = () => {
         setFeedback('');
     };
 
+    const handleEditToggle = () => {
+        if (!isEditing && user) {
+            setEditedName(user.name);
+            setEditedEmail(user.email);
+            setEditedAddress(user.address);
+        }
+        setIsEditing(!isEditing);
+    };
+
+    const handleSaveChanges = () => {
+        updateUser({
+            name: editedName,
+            email: editedEmail,
+            address: editedAddress,
+        });
+        setIsEditing(false);
+        alert(t('profileUpdatedSuccess'));
+    };
+
+    const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            updateUser({ profilePicture: base64String });
+        };
+        reader.readAsDataURL(file);
+    };
+    
+    const triggerFileUpload = () => {
+        fileInputRef.current?.click();
+    };
+
 
     if (!user) {
         return null; // Or a loading indicator
@@ -149,28 +192,100 @@ const ProfileScreen: React.FC = () => {
 
     return (
         <div>
+            {isComplaintModalOpen && <ComplaintModal onClose={() => setIsComplaintModalOpen(false)} t={t} addComplaint={addComplaint} />}
             <h1 className="text-3xl font-bold mb-4">{t('yourProfile')}</h1>
             
             <Card>
-                <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {user.name.charAt(0)}
+                <div className="flex items-center space-x-6">
+                     <div className="relative">
+                        {user.profilePicture ? (
+                            <img src={user.profilePicture} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+                        ) : (
+                            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                                {user.name.charAt(0)}
+                            </div>
+                        )}
+                        <button 
+                            onClick={triggerFileUpload}
+                            className="absolute -bottom-1 -right-1 bg-secondary rounded-full p-1.5 text-white shadow-md hover:bg-teal-600 transition-colors"
+                            aria-label={t('changePicture')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handlePictureUpload} 
+                            className="hidden" 
+                            accept="image/png, image/jpeg" 
+                        />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-semibold">{user.name}</h2>
-                        <p className="text-gray-500">{user.email}</p>
-                         {showGreenBadge && <GreenBadge />}
+                    
+                    <div className="flex-grow">
+                        {isEditing ? (
+                            <div className="space-y-2">
+                                <input 
+                                    type="text" 
+                                    value={editedName} 
+                                    onChange={(e) => setEditedName(e.target.value)}
+                                    className="text-xl font-semibold w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                                    aria-label="Name"
+                                />
+                                <input 
+                                    type="email" 
+                                    value={editedEmail} 
+                                    onChange={(e) => setEditedEmail(e.target.value)}
+                                    className="text-gray-500 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                                    aria-label="Email"
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <h2 className="text-xl font-semibold">{user.name}</h2>
+                                <p className="text-gray-500">{user.email}</p>
+                                {showGreenBadge && <GreenBadge />}
+                            </div>
+                        )}
                     </div>
                 </div>
                 
                 <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-2">{t('address')}</h3>
-                    <p>{user.address}</p>
+                    {isEditing ? (
+                        <textarea 
+                            value={editedAddress} 
+                            onChange={(e) => setEditedAddress(e.target.value)}
+                            rows={3}
+                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                        />
+                    ) : (
+                        <p>{user.address}</p>
+                    )}
                 </div>
-                 <div className="mt-6 border-t dark:border-gray-700 pt-4">
+
+                <div className="mt-6 border-t dark:border-gray-700 pt-4">
                     <h3 className="text-lg font-semibold mb-2">{t('householdId')}</h3>
                     <p className="font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-md">{user.householdId}</p>
                 </div>
+                 
+                {isEditing ? (
+                    <div className="flex justify-end space-x-4 mt-6">
+                        <button onClick={handleEditToggle} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">{t('cancel')}</button>
+                        <button onClick={handleSaveChanges} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors">{t('saveChanges')}</button>
+                    </div>
+                ) : (
+                     <div className="flex justify-end mt-4">
+                        <button onClick={handleEditToggle} className="flex items-center space-x-2 text-sm text-primary dark:text-dark-primary hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" />
+                            </svg>
+                            <span>{t('editProfile')}</span>
+                        </button>
+                    </div>
+                )}
             </Card>
 
             <Card className="mt-6">
@@ -278,7 +393,6 @@ const ProfileScreen: React.FC = () => {
                     {t('logout')}
                 </button>
             </div>
-            {isComplaintModalOpen && <ComplaintModal onClose={() => setIsComplaintModalOpen(false)} t={t} addComplaint={addComplaint} />}
         </div>
     );
 };

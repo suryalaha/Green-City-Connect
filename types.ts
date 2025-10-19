@@ -6,6 +6,7 @@ export interface User {
   email: string;
   address: string;
   householdId: string;
+  profilePicture?: string;
 }
 
 export interface Message {

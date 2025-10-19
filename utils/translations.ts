@@ -213,5 +213,10 @@ export const translations = {
     feedbackPlaceholder: 'Type your feedback here...',
     submitFeedback: 'Submit Feedback',
     feedbackSubmitted: 'Thank you for your feedback!',
+    editProfile: 'Edit Profile',
+    saveChanges: 'Save Changes',
+    cancel: 'Cancel',
+    changePicture: 'Change Picture',
+    profileUpdatedSuccess: 'Profile updated successfully!',
   },
 };

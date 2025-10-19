@@ -12,6 +12,7 @@ type Theme = 'light' | 'dark';
 interface AppContextType {
   user: User | null;
   login: (user: User) => void;
+  updateUser: (updatedData: Partial<User>) => void;
   logout: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -100,7 +101,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const login = (userData: User) => {
+    const storedPicture = localStorage.getItem(`profilePic_${userData.id}`);
+    if (storedPicture) {
+      userData.profilePicture = storedPicture;
+    }
     setUser(userData);
+  };
+  
+  const updateUser = (updatedData: Partial<User>) => {
+    setUser(currentUser => {
+      if (!currentUser) return null;
+      const newUser = { ...currentUser, ...updatedData };
+      
+      if (updatedData.profilePicture) {
+          localStorage.setItem(`profilePic_${currentUser.id}`, updatedData.profilePicture);
+      }
+      
+      return newUser;
+    });
   };
 
   const logout = () => {
@@ -218,6 +236,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const value = {
     user,
     login,
+    updateUser,
     logout,
     language,
     setLanguage,
