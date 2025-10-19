@@ -16,7 +16,7 @@ export interface Message {
 }
 
 export interface Payment {
-  id: string;
+  id:string;
   date: string;
   amount: number;
   status: 'paid' | 'pending' | 'failed';
@@ -34,6 +34,7 @@ export interface Booking {
   time: string;
   notes: string;
   reminderEnabled: boolean;
+  status: 'scheduled' | 'completed' | 'cancelled';
 }
 
 export interface Pickup {

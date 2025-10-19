@@ -148,6 +148,11 @@ export const translations = {
     confirmBooking: 'Confirm Booking',
     bookingConfirmed: 'Booking Confirmed!',
     bookingConfirmedDesc: 'Your special collection is scheduled for {date} at {time}.',
+    bookingHistoryTitle: 'Booking History',
+    noBookingHistory: 'No past or upcoming bookings found.',
+    statusScheduled: 'Scheduled',
+    statusCompleted: 'Completed',
+    statusCancelled: 'Cancelled',
 
     // ProfileScreen
     yourProfile: 'Your Profile',

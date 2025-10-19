@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
+import { Booking } from '../../types';
+
+const BookingStatusBadge: React.FC<{ status: Booking['status']; t: (key: string) => string; }> = ({ status, t }) => {
+    const statusMap = {
+        scheduled: { text: t('statusScheduled'), style: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' },
+        completed: { text: t('statusCompleted'), style: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' },
+        cancelled: { text: t('statusCancelled'), style: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' },
+    };
+    const { text, style } = statusMap[status];
+    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${style}`}>{text}</span>;
+};
 
 const BookingScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { addBooking } = useAppContext();
+    const { addBooking, bookings } = useAppContext();
 
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
@@ -92,6 +103,35 @@ const BookingScreen: React.FC = () => {
                         {t('confirmBooking')}
                     </button>
                 </form>
+            </Card>
+
+            <Card className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">{t('bookingHistoryTitle')}</h2>
+                {bookings.length > 0 ? (
+                    <ul className="space-y-4">
+                        {[...bookings]
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .map(booking => (
+                            <li key={booking.id} className="p-3 bg-background dark:bg-dark-background rounded-lg border dark:border-gray-700">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold">
+                                            {new Date(booking.date).toLocaleDateString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })} at {booking.time}
+                                        </p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{booking.notes || 'No notes provided'}</p>
+                                    </div>
+                                    <BookingStatusBadge status={booking.status} t={t} />
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-center text-gray-500 py-4">{t('noBookingHistory')}</p>
+                )}
             </Card>
         </div>
     );

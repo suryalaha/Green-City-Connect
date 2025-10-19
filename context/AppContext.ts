@@ -19,7 +19,7 @@ interface AppContextType {
   outstandingBalance: number;
   addWasteLog: (type: 'wet' | 'dry' | 'mixed') => boolean;
   wasteLogs: WasteLog[];
-  addBooking: (booking: Omit<Booking, 'id'>) => void;
+  addBooking: (booking: Omit<Booking, 'id' | 'status'>) => void;
   bookings: Booking[];
   pickupHistory: Pickup[];
   complaints: Complaint[];
@@ -37,7 +37,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [language, setLanguage] = useState<Language>('en');
   const [outstandingBalance, setOutstandingBalance] = useState(75.00);
   const [wasteLogs, setWasteLogs] = useState<WasteLog[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([
+    {
+      id: 'b1',
+      date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0],
+      time: '10:00',
+      notes: 'Old furniture pickup',
+      reminderEnabled: true,
+      status: 'completed',
+    },
+    {
+      id: 'b2',
+      date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0],
+      time: '14:00',
+      notes: 'Garden waste',
+      reminderEnabled: false,
+      status: 'cancelled',
+    },
+  ]);
   const [pickupHistory, setPickupHistory] = useState<Pickup[]>([
     { type: 'recycling', date: new Date(Date.now() - 86400000 * 60).toISOString() },
     { type: 'compost', date: new Date(Date.now() - 86400000 * 30).toISOString() },
@@ -108,12 +125,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return isThirdStrike;
   };
 
-  const addBooking = (bookingData: Omit<Booking, 'id'>) => {
+  const addBooking = (bookingData: Omit<Booking, 'id' | 'status'>) => {
       const newBooking: Booking = {
           ...bookingData,
           id: Date.now().toString(),
+          status: 'scheduled',
       };
-      setBookings(prev => [...prev, newBooking]);
+      setBookings(prev => [newBooking, ...prev]);
   };
 
   const addComplaint = (complaintData: Omit<Complaint, 'id' | 'date' | 'status'>) => {
