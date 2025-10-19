@@ -312,7 +312,14 @@ const LoginScreen: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium mb-1">{t('address')}</label>
-              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required />
+              <textarea 
+                value={address} 
+                onChange={e => setAddress(e.target.value)} 
+                rows={2} 
+                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" 
+                required 
+                placeholder={t('addressPlaceholder')}
+              />
             </div>
 
             <div>

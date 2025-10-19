@@ -20,6 +20,7 @@ export const translations = {
     lastName: 'Last Name',
     mobileNumber: 'Mobile Number',
     address: 'Address',
+    addressPlaceholder: 'Enter your full street address, city, and postal code',
     sendOtp: 'Send OTP',
     sent: 'Sent',
     verify: 'Verify',
