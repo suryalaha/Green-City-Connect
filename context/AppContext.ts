@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { User, WasteLog, Booking, Pickup, Complaint, Payment } from '../types';
 import { translations } from '../utils/translations';
 
-type Language = 'en'; // Can be extended with more languages
+type Language = 'en' | 'bn' | 'hi'; // Can be extended with more languages
 type Theme = 'light' | 'dark';
 
 interface AppContextType {
@@ -126,8 +126,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const t = useCallback((key: string): string => {
-    const translationSet = translations[language] as Record<string, string>;
-    return translationSet[key] || key;
+    const translationSet = translations[language] as Record<string, string | undefined> | undefined;
+    return translationSet?.[key] || translations.en[key] || key;
   }, [language]);
 
   const addWasteLog = (type: 'wet' | 'dry' | 'mixed'): boolean => {

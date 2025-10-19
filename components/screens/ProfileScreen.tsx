@@ -279,7 +279,7 @@ const ProfileScreen: React.FC = () => {
                 ) : (
                      <div className="flex justify-end mt-4">
                         <button onClick={handleEditToggle} className="flex items-center space-x-2 text-sm text-primary dark:text-dark-primary hover:underline">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" />
                             </svg>
                             <span>{t('editProfile')}</span>
@@ -348,11 +348,12 @@ const ProfileScreen: React.FC = () => {
                         <span>{t('language')}</span>
                          <select 
                             value={language} 
-                            onChange={(e) => setLanguage(e.target.value as 'en')}
+                            onChange={(e) => setLanguage(e.target.value as 'en' | 'bn' | 'hi')}
                             className="p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-sm"
                         >
                             <option value="en">English</option>
-                            {/* Add other languages here if needed */}
+                            <option value="bn">বাংলা (Bengali)</option>
+                            <option value="hi">हिंदी (Hindi)</option>
                         </select>
                     </div>
                  </div>
