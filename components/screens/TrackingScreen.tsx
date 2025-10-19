@@ -120,6 +120,33 @@ const TrackingScreen: React.FC = () => {
                     <p className="text-sm text-gray-500 mt-1">{user?.address}</p>
                 </div>
             </Card>
+
+            <Card className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">{t('pickupScheduleTitle')}</h2>
+                <ul className="space-y-4">
+                    <li className="flex items-center">
+                        <span className="text-3xl mr-4" aria-label="Recycling icon">♻️</span>
+                        <div>
+                            <p className="font-semibold">{t('recycling')}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('pickupDayRecycling')}</p>
+                        </div>
+                    </li>
+                    <li className="flex items-center">
+                        <span className="text-3xl mr-4" aria-label="Compost icon">🌿</span>
+                        <div>
+                            <p className="font-semibold">{t('compost')}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('pickupDayCompost')}</p>
+                        </div>
+                    </li>
+                    <li className="flex items-center">
+                        <span className="text-3xl mr-4" aria-label="General waste icon">🗑️</span>
+                        <div>
+                            <p className="font-semibold">{t('generalWaste')}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('pickupDayGeneral')}</p>
+                        </div>
+                    </li>
+                </ul>
+            </Card>
         </div>
     );
 };

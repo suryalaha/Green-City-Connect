@@ -14,7 +14,8 @@ const DashboardScreen: React.FC = () => {
 
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
+        // FIX: Replaced NodeJS.Timeout with ReturnType<typeof setTimeout> for browser compatibility.
+        let timer: ReturnType<typeof setTimeout>;
         if (showSuccess) {
             timer = setTimeout(() => {
                 setShowSuccess(false);

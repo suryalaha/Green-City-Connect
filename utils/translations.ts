@@ -42,6 +42,13 @@ export const translations = {
     statusArrived: 'Arrived',
     minutes: 'minutes',
     yourLocation: 'Your Location',
+    pickupScheduleTitle: 'Pickup Schedule',
+    recycling: 'Recycling',
+    compost: 'Compost',
+    generalWaste: 'General Waste',
+    pickupDayRecycling: 'Every Tuesday',
+    pickupDayCompost: 'Every Friday',
+    pickupDayGeneral: 'Every Friday',
 
     // Chatbot
     chatbotGreetingMorning: 'Good morning! How can I help you with your waste management today?',
@@ -117,6 +124,11 @@ export const translations = {
     statusResolved: 'Resolved',
     settings: 'Settings',
     darkMode: 'Dark Mode',
+    appFeedback: 'App Feedback',
+    appFeedbackDescription: 'Have suggestions or found a bug? Let us know!',
+    feedbackPlaceholder: 'Type your feedback here...',
+    submitFeedback: 'Submit Feedback',
+    feedbackSubmitted: 'Thank you for your feedback!',
   },
   // Add other languages here if needed
 };

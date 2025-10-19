@@ -100,6 +100,7 @@ const ProfileScreen: React.FC = () => {
     const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme } = useAppContext();
     const { t, language, setLanguage } = useTranslations();
     const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
+    const [feedback, setFeedback] = useState('');
 
     const [notifications, setNotifications] = useState({
         push: true,
@@ -121,6 +122,25 @@ const ProfileScreen: React.FC = () => {
         };
         return map[issueType];
     }
+
+    const handleFeedbackSubmit = () => {
+        if (feedback.trim() === '') {
+            alert('Please enter some feedback before submitting.');
+            return;
+        }
+        console.log('--- App Feedback Submitted ---');
+        console.log(feedback);
+        try {
+            const existingFeedback = JSON.parse(localStorage.getItem('appFeedback') || '[]');
+            existingFeedback.push({ text: feedback, date: new Date().toISOString() });
+            localStorage.setItem('appFeedback', JSON.stringify(existingFeedback));
+        } catch (error) {
+            console.error("Could not save feedback to localStorage", error);
+        }
+        
+        alert(t('feedbackSubmitted'));
+        setFeedback('');
+    };
 
 
     if (!user) {
@@ -175,6 +195,24 @@ const ProfileScreen: React.FC = () => {
                 ) : (
                     <p className="text-sm text-center text-gray-500 py-4">{t('noComplaints')}</p>
                 )}
+            </Card>
+
+            <Card className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">{t('appFeedback')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('appFeedbackDescription')}</p>
+                <textarea
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    rows={4}
+                    placeholder={t('feedbackPlaceholder')}
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 mb-4"
+                />
+                <button
+                    onClick={handleFeedbackSubmit}
+                    className="w-full bg-secondary text-white py-2 rounded-md hover:opacity-90 transition-colors"
+                >
+                    {t('submitFeedback')}
+                </button>
             </Card>
 
             <Card className="mt-6">
