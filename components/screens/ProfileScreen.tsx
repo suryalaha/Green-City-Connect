@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
-import { Complaint, SubscriptionPlan } from '../../types';
+import { Complaint, SubscriptionPlan, User } from '../../types';
 
 const GreenBadge: React.FC = () => {
     const { t } = useTranslations();
@@ -97,7 +97,7 @@ const ComplaintModal: React.FC<{
 };
 
 const ProfileScreen: React.FC = () => {
-    const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser, setCurrentScreen, subscriptionPlans } = useAppContext();
+    const { loggedInUser: user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser, setCurrentScreen, subscriptionPlans } = useAppContext();
     const { t, language, setLanguage } = useTranslations();
     
     const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
@@ -153,8 +153,8 @@ const ProfileScreen: React.FC = () => {
     const handleEditToggle = () => {
         if (!isEditing && user) {
             setEditedName(user.name);
-            setEditedEmail(user.email);
-            setEditedAddress(user.address);
+            setEditedEmail((user as User).email);
+            setEditedAddress((user as User).address);
         }
         setIsEditing(!isEditing);
     };
@@ -185,9 +185,9 @@ const ProfileScreen: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    const currentPlan = user ? subscriptionPlans.find(p => p.id === user.subscription.planId) : null;
+    const currentPlan = user ? subscriptionPlans.find(p => p.id === (user as User).subscription.planId) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'user') {
         return null; // Or a loading indicator
     }
 

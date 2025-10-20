@@ -9,7 +9,33 @@ export interface User {
   householdId: string;
   profilePicture?: string;
   subscription: UserSubscription;
+  role: 'user';
 }
+
+export interface Admin {
+  id: string;
+  name: string;
+  mobile: string;
+  password: string;
+  role: 'admin';
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  timestamp: number;
+}
+
+export interface AdminMessage {
+  id: string;
+  userId: string;
+  text: string;
+  timestamp: number;
+  read: boolean;
+  sender: 'admin';
+}
+
 
 export interface SubscriptionPlan {
   id: string;

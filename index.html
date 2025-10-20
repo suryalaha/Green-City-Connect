@@ -13,28 +13,44 @@
           extend: {
             colors: {
               primary: {
-                light: '#6EE7B7',
-                DEFAULT: '#10B981',
-                dark: '#047857',
+                DEFAULT: '#10B981', // green-500
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                200: '#bbf7d0',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#22c55e',
+                600: '#16a34a',
+                700: '#15803d',
+                800: '#166534',
+                900: '#14532d',
               },
               secondary: {
-                light: '#5EEAD4',
-                DEFAULT: '#0D9488',
-                dark: '#0F766E',
+                DEFAULT: '#0D9488', // teal-600
+                50: '#f0fdfa',
+                100: '#ccfbf1',
+                200: '#99f6e4',
+                300: '#5eead4',
+                400: '#2dd4bf',
+                500: '#14b8a6',
+                600: '#0d9488',
+                700: '#0f766e',
+                800: '#115e59',
+                900: '#134e4a',
               },
               background: 'rgb(248 250 252)', // slate-50
-              foreground: 'rgb(30 41 59)', // slate-800
+              foreground: 'rgb(30 41 59)',   // slate-800
               card: 'rgb(255 255 255)',
-              'dark-background': 'rgb(15 23 42)', // slate-900
+              'dark-background': 'rgb(2 6 23)', // slate-950
               'dark-foreground': 'rgb(226 232 240)', // slate-200
-              'dark-card': 'rgb(30 41 59)', // slate-800
+              'dark-card': 'rgb(30 41 59)',      // slate-800
               accent: {
                 DEFAULT: 'rgb(245 158 11)', // amber-500
-                dark: 'rgb(180 83 9)', // amber-700
+                dark: 'rgb(180 83 9)',     // amber-700
               },
               danger: {
                 DEFAULT: 'rgb(239 68 68)', // red-500
-                dark: 'rgb(185 28 28)', // red-700
+                dark: 'rgb(185 28 28)',     // red-700
               },
             },
             boxShadow: {
@@ -46,6 +62,8 @@
       };
     </script>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
       @keyframes bounce-in {
         0% {
           opacity: 0;
@@ -76,6 +94,7 @@
         animation: fade-in-up 0.6s ease-out forwards;
       }
       body {
+        font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }

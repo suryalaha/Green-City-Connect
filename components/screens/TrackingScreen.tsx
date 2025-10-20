@@ -53,7 +53,7 @@ const haversineDistance = (coords1: { lat: number; lon: number }, coords2: { lat
 
 const TrackingScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { user } = useAppContext();
+    const { loggedInUser: user } = useAppContext();
     
     const [isTracking, setIsTracking] = useState(false);
     const [currentPosition, setCurrentPosition] = useState<GeolocationCoordinates | null>(null);
@@ -301,7 +301,7 @@ const TrackingScreen: React.FC = () => {
                         <strong>{t('statusLabel')}:</strong> 
                         <span className={`font-semibold ml-2 ${isTracking ? 'text-green-500' : 'text-gray-500'}`}>{isTracking ? 'Tracking Active' : 'Idle'}</span>
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">{user?.address}</p>
+                    <p className="text-sm text-gray-500 mt-1">{user?.role === 'user' && user.address}</p>
                 </div>
             </Card>
 

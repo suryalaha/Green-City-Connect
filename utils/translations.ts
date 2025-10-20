@@ -4,10 +4,14 @@ export const translations: Record<string, Record<string, string>> = {
   en: {
     // App general
     welcome: 'Welcome',
+    user: 'User',
+    admin: 'Admin',
     
     // Login & Sign Up
     login: 'Login',
+    loggingIn: 'Logging in...',
     signUp: 'Sign Up',
+    signingUp: 'Signing up...',
     email: 'Email',
     password: 'Password',
     passwordStrength: 'Password Strength',
@@ -33,8 +37,8 @@ export const translations: Record<string, Record<string, string>> = {
     signupSuccessAlert: 'Registration Successful!',
     yourHouseholdIdIs: 'Your new Household ID is:',
     errorInvalidEmail: 'Please enter a valid email address.',
-    errorPasswordLength: 'Password must be at least 8 characters long.',
-    errorInvalidMobile: 'Please enter a valid Indian mobile number (e.g., +919876543210).',
+    errorPasswordLength: 'Password must be at least 6 characters long.',
+    errorInvalidMobile: 'Please enter a valid 10-12 digit mobile number.',
     errorVerifyBoth: 'Please verify both your email and mobile number to proceed.',
     errorAllFieldsRequired: 'Please fill out all required fields.',
     errorFirstNameRequired: 'First name is required.',
@@ -55,6 +59,7 @@ export const translations: Record<string, Record<string, string>> = {
     payment: 'Payment',
     profile: 'Profile',
     help: 'Help',
+    inbox: 'Inbox',
     
     // DashboardScreen
     dashboardSubtitle: "Here's an overview of your waste management.",
@@ -235,7 +240,6 @@ export const translations: Record<string, Record<string, string>> = {
     manageSubscription: 'Manage Subscription',
     noActiveSubscription: 'No active subscription found.',
 
-
     // Help/FAQ Screen
     helpTitle: 'Help & FAQ',
     helpSubtitle: 'Find answers to common questions below.',
@@ -276,6 +280,24 @@ export const translations: Record<string, Record<string, string>> = {
     subscriptionUpdatedSuccess: 'Subscription updated successfully!',
     subscriptionUpdateFailed: 'Failed to update subscription. Please try again.',
     processing: 'Processing...',
+
+    // Admin Dashboard
+    adminDashboard: 'Admin Dashboard',
+    totalUsers: 'Total Users',
+    announcements: 'Announcements',
+    createAnnouncement: 'Create Announcement',
+    announcementTitle: 'Title',
+    announcementContent: 'Content',
+    postAnnouncement: 'Post Announcement',
+    allUsers: 'All Users',
+    sendMessage: 'Send Message',
+    chatWith: 'Chat with',
+    typeYourMessage: 'Type your message...',
+    
+    // Inbox
+    inboxTitle: 'Admin Messages',
+    noMessages: 'You have no messages from the admin.',
+    
   },
   bn: { // Bengali
     welcome: 'স্বাগতম',

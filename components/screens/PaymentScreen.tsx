@@ -231,7 +231,7 @@ const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t
 
 const PaymentScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { user, outstandingBalance, payments, makePayment } = useAppContext();
+    const { loggedInUser: user, outstandingBalance, payments, makePayment } = useAppContext();
     
     const [state, dispatch] = useReducer(paymentReducer, initialState);
     const [autoRenewal, setAutoRenewal] = useState(true);
@@ -331,7 +331,7 @@ const PaymentScreen: React.FC = () => {
             {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={amountToPay} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
             {state.modal === 'receipt' && state.activePayment && <ReceiptModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
             {state.modal === 'failed' && <PaymentFailedModal onClose={handleCloseAllModals} onRetry={handleRetryPayment} t={t} />}
-            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user} t={t} />}
+            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user as User} t={t} />}
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
