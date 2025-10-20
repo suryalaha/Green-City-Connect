@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
-import { Complaint } from '../../types';
+import { Complaint, SubscriptionPlan } from '../../types';
 
 const GreenBadge: React.FC = () => {
     const { t } = useTranslations();
@@ -97,7 +97,7 @@ const ComplaintModal: React.FC<{
 };
 
 const ProfileScreen: React.FC = () => {
-    const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser } = useAppContext();
+    const { user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser, setCurrentScreen, subscriptionPlans } = useAppContext();
     const { t, language, setLanguage } = useTranslations();
     
     const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
@@ -185,6 +185,7 @@ const ProfileScreen: React.FC = () => {
         fileInputRef.current?.click();
     };
 
+    const currentPlan = user ? subscriptionPlans.find(p => p.id === user.subscription.planId) : null;
 
     if (!user) {
         return null; // Or a loading indicator
@@ -210,7 +211,7 @@ const ProfileScreen: React.FC = () => {
                             className="absolute -bottom-1 -right-1 bg-secondary rounded-full p-1.5 text-white shadow-md hover:bg-teal-600 transition-colors"
                             aria-label={t('changePicture')}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
@@ -285,6 +286,35 @@ const ProfileScreen: React.FC = () => {
                             <span>{t('editProfile')}</span>
                         </button>
                     </div>
+                )}
+            </Card>
+
+            <Card className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">{t('currentSubscription')}</h3>
+                {currentPlan ? (
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium">{t('plan')}:</span>
+                            <span>{currentPlan.name}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <span className="font-medium">{t('binSize')}:</span>
+                            <span>{currentPlan.binSize}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <span className="font-medium">{t('monthlyCost')}:</span>
+                            <span className="font-bold">₹{currentPlan.pricePerMonth.toFixed(2)}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <span className="font-medium">{t('nextRenewal')}:</span>
+                            <span>{new Date(user.subscription.nextRenewalDate).toLocaleDateString()}</span>
+                        </div>
+                        <button onClick={() => setCurrentScreen('subscription')} className="w-full mt-2 bg-secondary text-white py-2 rounded-md hover:opacity-90 transition-colors">
+                            {t('manageSubscription')}
+                        </button>
+                    </div>
+                ) : (
+                    <p>{t('noActiveSubscription')}</p>
                 )}
             </Card>
 

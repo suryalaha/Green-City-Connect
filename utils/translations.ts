@@ -14,7 +14,7 @@ export const translations: Record<string, Record<string, string>> = {
     passwordStrengthWeak: 'Weak',
     passwordStrengthMedium: 'Medium',
     passwordStrengthStrong: 'Strong',
-    noAccount: "Don't have an account?",
+    noAccount: "Don't have an an account?",
     hasAccount: 'Already have an account?',
     firstName: 'First Name',
     lastName: 'Last Name',
@@ -227,6 +227,14 @@ export const translations: Record<string, Record<string, string>> = {
     cancel: 'Cancel',
     changePicture: 'Change Picture',
     profileUpdatedSuccess: 'Profile updated successfully!',
+    currentSubscription: 'Current Subscription',
+    plan: 'Plan',
+    binSize: 'Bin Size',
+    monthlyCost: 'Monthly Cost',
+    nextRenewal: 'Next Renewal',
+    manageSubscription: 'Manage Subscription',
+    noActiveSubscription: 'No active subscription found.',
+
 
     // Help/FAQ Screen
     helpTitle: 'Help & FAQ',
@@ -251,6 +259,23 @@ export const translations: Record<string, Record<string, string>> = {
     faqA9: 'You can report a missed pickup directly in the app. Go to the \'Profile\' screen and tap on \'File New Complaint\'. Select \'Missed Pickup\' as the issue type and provide the date of the missed collection. Our team will investigate the issue promptly.',
     faqQ10: 'The collection truck came much earlier/later than usual. Why?',
     faqA10: 'Collection times can vary due to traffic, weather conditions, or changes in routing to improve efficiency. While we aim for consistency, please ensure your bins are out by 6 AM on your collection day to avoid a missed pickup.',
+
+    // Subscription Management Screen
+    subscriptionManagement: 'Subscription Management',
+    currentPlan: 'Current Plan',
+    availablePlans: 'Available Plans',
+    collectionFrequency: 'Collection Frequency',
+    switchToThisPlan: 'Switch to this Plan',
+    current: 'Current',
+    confirmSubscriptionChange: 'Confirm Subscription Change',
+    changePlanTo: 'You are about to change your plan to',
+    proratedCharge: 'A one-time charge for the upgrade will be applied immediately.',
+    chargeAmount: 'Charge Amount',
+    newMonthlyFee: 'Your new monthly fee will be',
+    confirmChange: 'Confirm Change',
+    subscriptionUpdatedSuccess: 'Subscription updated successfully!',
+    subscriptionUpdateFailed: 'Failed to update subscription. Please try again.',
+    processing: 'Processing...',
   },
   bn: { // Bengali
     welcome: 'স্বাগতম',

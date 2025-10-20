@@ -8,6 +8,21 @@ export interface User {
   address: string;
   householdId: string;
   profilePicture?: string;
+  subscription: UserSubscription;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  pricePerMonth: number;
+  binSize: 'Small (60L)' | 'Medium (120L)' | 'Large (240L)';
+  frequency: 'Weekly' | 'Bi-Weekly';
+}
+
+export interface UserSubscription {
+  planId: string;
+  status: 'active' | 'paused' | 'cancelled';
+  nextRenewalDate: string;
 }
 
 export interface Message {

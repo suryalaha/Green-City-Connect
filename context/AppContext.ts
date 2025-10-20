@@ -3,16 +3,29 @@
 // but is named .ts to match the provided file structure and error messages.
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { User, WasteLog, Booking, Pickup, Complaint, Payment } from '../types';
+import { User, WasteLog, Booking, Pickup, Complaint, Payment, SubscriptionPlan } from '../types';
 import { translations } from '../utils/translations';
+import { Screen } from '../App';
 
 type Language = 'en' | 'bn' | 'hi'; // Can be extended with more languages
 type Theme = 'light' | 'dark';
 
+const MOCK_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+    { id: 'plan_basic', name: 'Basic Household', pricePerMonth: 75.00, binSize: 'Small (60L)', frequency: 'Weekly' },
+    { id: 'plan_standard', name: 'Standard Family', pricePerMonth: 120.00, binSize: 'Medium (120L)', frequency: 'Weekly' },
+    { id: 'plan_large', name: 'Large Household', pricePerMonth: 180.00, binSize: 'Large (240L)', frequency: 'Weekly' },
+    { id: 'plan_biweekly', name: 'Bi-Weekly Saver', pricePerMonth: 45.00, binSize: 'Small (60L)', frequency: 'Bi-Weekly' },
+];
+
+const getNextRenewalDate = () => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString();
+}
+
 interface AppContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (userData: Omit<User, 'id' | 'householdId' | 'profilePicture'>) => Promise<User>;
+  signup: (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription'>) => Promise<User>;
   updateUser: (updatedData: Partial<User>) => void;
   logout: () => void;
   language: Language;
@@ -31,12 +44,17 @@ interface AppContextType {
   payments: Payment[];
   makePayment: (amount: number) => Promise<Payment>;
   payForBooking: (bookingId: string) => Promise<Payment>;
+  currentScreen: Screen;
+  setCurrentScreen: (screen: Screen) => void;
+  subscriptionPlans: SubscriptionPlan[];
+  updateSubscription: (newPlanId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
   const [users, setUsers] = useState<User[]>(() => {
     try {
         const storedUsers = localStorage.getItem('users');
@@ -48,6 +66,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             password: 'password123',
             address: '123 Green St, Eco City, 12345',
             householdId: 'GCC-JD-A4B8',
+            subscription: {
+                planId: 'plan_basic',
+                status: 'active',
+                nextRenewalDate: getNextRenewalDate(),
+            }
         };
         if (!initialUsers.some(u => u.id === '1')) {
             initialUsers.push(sampleUser);
@@ -128,7 +151,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const login = (email: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const userToLogin = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const isTestEmail = email.toLowerCase() === 'suryalaha12@gmail.com';
+      let userToLogin = isTestEmail
+        ? users.find(u => u.id === '1') // The default mock user
+        : users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
       if (!userToLogin) {
         return reject(new Error('Invalid email or password.'));
@@ -140,6 +166,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           userToLogin.profilePicture = storedPicture;
         }
         setUser(userToLogin);
+        // Set outstanding balance based on user's subscription on login
+        const userPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === userToLogin.subscription.planId);
+        setOutstandingBalance(userPlan?.pricePerMonth || 75.00);
         resolve();
       } else {
         reject(new Error('Invalid email or password.'));
@@ -147,8 +176,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const signup = (userData: Omit<User, 'id' | 'householdId' | 'profilePicture'>): Promise<User> => {
+  const signup = (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription'>): Promise<User> => {
     return new Promise((resolve, reject) => {
+        if (userData.email.toLowerCase() === 'suryalaha12@gmail.com') {
+            return reject(new Error('This email is reserved for testing and cannot be used for sign up.'));
+        }
         if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
             return reject(new Error('A user with this email already exists.'));
         }
@@ -171,6 +203,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ...userData,
             id: Date.now().toString(),
             householdId: generateHouseholdId(firstName, lastNameParts.join(' '), userData.address),
+            subscription: { // Default subscription for new users
+                planId: 'plan_basic',
+                status: 'active',
+                nextRenewalDate: getNextRenewalDate(),
+            }
         };
 
         setUsers(prev => [...prev, newUser]);
@@ -194,6 +231,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = () => {
     setUser(null);
+    setCurrentScreen('dashboard');
   };
 
   const t = useCallback((key: string): string => {
@@ -304,6 +342,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  const updateSubscription = (newPlanId: string): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        if (!user) return reject(new Error("User not found"));
+
+        const currentPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === user.subscription.planId);
+        const newPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === newPlanId);
+
+        if (!currentPlan || !newPlan) return reject(new Error("Invalid plan selected"));
+
+        const priceDifference = newPlan.pricePerMonth - currentPlan.pricePerMonth;
+
+        try {
+            if (priceDifference > 0) {
+                // This is an upgrade, charge the prorated difference
+                // For simplicity, we'll charge the full difference. A real app would prorate.
+                await makePayment(priceDifference);
+            }
+            
+            const updatedUser = {
+                ...user,
+                subscription: {
+                    ...user.subscription,
+                    planId: newPlanId,
+                }
+            };
+
+            setUser(updatedUser);
+            setUsers(prevUsers => prevUsers.map(u => u.id === user.id ? updatedUser : u));
+            
+            // Update the outstanding balance for the *next* cycle
+            setOutstandingBalance(newPlan.pricePerMonth);
+            
+            resolve();
+        } catch (error) {
+            reject(error);
+        }
+    });
+  };
+
   const value = {
     user,
     login,
@@ -326,6 +403,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     payments,
     makePayment,
     payForBooking,
+    currentScreen,
+    setCurrentScreen,
+    subscriptionPlans: MOCK_SUBSCRIPTION_PLANS,
+    updateSubscription,
   };
 
   return React.createElement(AppContext.Provider, { value: value }, children);

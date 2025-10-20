@@ -10,12 +10,12 @@ import Chatbot from './components/Chatbot';
 import CommunityDashboardScreen from './components/screens/CommunityDashboardScreen';
 import BookingScreen from './components/screens/BookingScreen';
 import HelpScreen from './components/screens/HelpScreen';
+import SubscriptionManagementScreen from './components/screens/SubscriptionManagementScreen';
 
-export type Screen = 'dashboard' | 'tracking' | 'booking' | 'payment' | 'profile' | 'community' | 'help';
+export type Screen = 'dashboard' | 'tracking' | 'booking' | 'payment' | 'profile' | 'community' | 'help' | 'subscription';
 
 const AppContent: React.FC = () => {
-  const { user } = useAppContext();
-  const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
+  const { user, currentScreen, setCurrentScreen } = useAppContext();
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const renderScreen = () => {
@@ -34,6 +34,8 @@ const AppContent: React.FC = () => {
         return <CommunityDashboardScreen />;
       case 'help':
         return <HelpScreen />;
+      case 'subscription':
+        return <SubscriptionManagementScreen />;
       default:
         return <DashboardScreen />;
     }
@@ -60,7 +62,7 @@ const AppContent: React.FC = () => {
         </button>
       </div>
       {isChatbotOpen && <Chatbot onClose={() => setIsChatbotOpen(false)} />}
-      <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+      <BottomNav />
     </div>
   );
 };
