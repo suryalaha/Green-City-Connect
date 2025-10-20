@@ -50,10 +50,11 @@ const PasswordStrengthIndicator: React.FC<{
 
 
 const LoginScreen: React.FC = () => {
-  const { login } = useAppContext();
+  const { login, signup } = useAppContext();
   const { t } = useTranslations();
   
   const [isLoginView, setIsLoginView] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
@@ -61,6 +62,7 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginEmailError, setLoginEmailError] = useState('');
   const [loginPasswordError, setLoginPasswordError] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   // Sign Up State
   const [firstName, setFirstName] = useState('');
@@ -132,6 +134,7 @@ const LoginScreen: React.FC = () => {
 
   const validateLogin = () => {
     let isValid = true;
+    setLoginError('');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
       setLoginEmailError(t('errorInvalidEmail'));
       isValid = false;
@@ -148,18 +151,19 @@ const LoginScreen: React.FC = () => {
     return isValid;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateLogin()) return;
     
-    const sampleUser: User = {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      address: '123 Green St, Eco City, 12345',
-      householdId: 'GCC-JD-A4B8',
-    };
-    login(sampleUser);
+    setIsLoading(true);
+    try {
+        await login(loginEmail, loginPassword);
+        // Success: App context will handle redirect
+    } catch (error) {
+        setLoginError((error as Error).message);
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleSendOtp = (type: 'email' | 'mobile') => {
@@ -200,35 +204,27 @@ const LoginScreen: React.FC = () => {
           }
       }
   }
-  
-  const generateHouseholdId = (firstName: string, lastName: string, address: string): string => {
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    let hash = 0;
-    for (let i = 0; i < address.length; i++) {
-        const char = address.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0;
-    }
-    const shortHash = Math.abs(hash).toString(16).slice(0, 4).toUpperCase();
-    return `GCC-${initials}-${shortHash}`;
-  };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!validateSignUp()) {
           return;
       }
 
-      const householdId = generateHouseholdId(firstName, lastName, address);
-      const newUser: User = {
-          id: Date.now().toString(),
-          name: `${firstName} ${lastName}`,
-          email: signUpEmail,
-          address,
-          householdId,
-      };
-      alert(`${t('signupSuccessAlert')}\n${t('yourHouseholdIdIs')} ${householdId}`);
-      login(newUser);
+      setIsLoading(true);
+      try {
+          const newUser = await signup({
+              name: `${firstName} ${lastName}`,
+              email: signUpEmail,
+              password: signUpPassword,
+              address,
+          });
+          alert(`${t('signupSuccessAlert')}\n${t('yourHouseholdIdIs')} ${newUser.householdId}`);
+      } catch (error) {
+          setSignUpErrors(prev => ({ ...prev, signUpEmail: (error as Error).message }));
+      } finally {
+          setIsLoading(false);
+      }
   };
   
   const handleSignUpPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,6 +245,7 @@ const LoginScreen: React.FC = () => {
         </h1>
         {isLoginView ? (
           <form onSubmit={handleLogin} noValidate>
+            {loginError && <p className="text-red-500 text-sm text-center mb-4">{loginError}</p>}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1" htmlFor="email">{t('email')}</label>
               <input
@@ -291,9 +288,10 @@ const LoginScreen: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
+              disabled={isLoading}
+              className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors disabled:bg-gray-400"
             >
-              {t('login')}
+              {isLoading ? 'Logging in...' : t('login')}
             </button>
           </form>
         ) : (
@@ -396,10 +394,10 @@ const LoginScreen: React.FC = () => {
 
             <button
               type="submit"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
               className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors disabled:bg-gray-400"
             >
-              {t('signUp')}
+              {isLoading ? 'Signing up...' : t('signUp')}
             </button>
           </form>
         )}

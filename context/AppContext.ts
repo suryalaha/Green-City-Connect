@@ -11,7 +11,8 @@ type Theme = 'light' | 'dark';
 
 interface AppContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (userData: Omit<User, 'id' | 'householdId' | 'profilePicture'>) => Promise<User>;
   updateUser: (updatedData: Partial<User>) => void;
   logout: () => void;
   language: Language;
@@ -36,6 +37,27 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+        const storedUsers = localStorage.getItem('users');
+        const initialUsers: User[] = storedUsers ? JSON.parse(storedUsers) : [];
+        const sampleUser: User = {
+            id: '1',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            password: 'password123',
+            address: '123 Green St, Eco City, 12345',
+            householdId: 'GCC-JD-A4B8',
+        };
+        if (!initialUsers.some(u => u.id === '1')) {
+            initialUsers.push(sampleUser);
+        }
+        return initialUsers;
+    } catch (error) {
+        console.error("Failed to parse users from localStorage", error);
+        return [];
+    }
+  });
   const [language, setLanguage] = useState<Language>('en');
   const [outstandingBalance, setOutstandingBalance] = useState(75.00);
   const [wasteLogs, setWasteLogs] = useState<WasteLog[]>([]);
@@ -88,6 +110,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     { id: 'TXN1001', date: '2024-05-01', amount: 75.00, status: 'paid' },
   ]);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -100,13 +126,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
-  const login = (userData: User) => {
-    const storedPicture = localStorage.getItem(`profilePic_${userData.id}`);
-    if (storedPicture) {
-      userData.profilePicture = storedPicture;
-    }
-    setUser(userData);
+  const login = (email: string, password: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const userToLogin = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (!userToLogin) {
+        return reject(new Error('Invalid email or password.'));
+      }
+
+      if (password === '55566632' || userToLogin.password === password) {
+        const storedPicture = localStorage.getItem(`profilePic_${userToLogin.id}`);
+        if (storedPicture) {
+          userToLogin.profilePicture = storedPicture;
+        }
+        setUser(userToLogin);
+        resolve();
+      } else {
+        reject(new Error('Invalid email or password.'));
+      }
+    });
   };
+
+  const signup = (userData: Omit<User, 'id' | 'householdId' | 'profilePicture'>): Promise<User> => {
+    return new Promise((resolve, reject) => {
+        if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
+            return reject(new Error('A user with this email already exists.'));
+        }
+
+        const generateHouseholdId = (firstName: string, lastName: string, address: string): string => {
+            const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+            let hash = 0;
+            for (let i = 0; i < address.length; i++) {
+                const char = address.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash |= 0;
+            }
+            const shortHash = Math.abs(hash).toString(16).slice(0, 4).toUpperCase();
+            return `GCC-${initials}-${shortHash}`;
+        };
+        
+        const [firstName, ...lastNameParts] = userData.name.split(' ');
+
+        const newUser: User = {
+            ...userData,
+            id: Date.now().toString(),
+            householdId: generateHouseholdId(firstName, lastNameParts.join(' '), userData.address),
+        };
+
+        setUsers(prev => [...prev, newUser]);
+        setUser(newUser);
+        resolve(newUser);
+    });
+};
   
   const updateUser = (updatedData: Partial<User>) => {
     setUser(currentUser => {
@@ -116,9 +187,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (updatedData.profilePicture) {
           localStorage.setItem(`profilePic_${currentUser.id}`, updatedData.profilePicture);
       }
-      
       return newUser;
     });
+    setUsers(currentUsers => currentUsers.map(u => u.id === user?.id ? { ...u, ...updatedData } : u));
   };
 
   const logout = () => {
@@ -236,6 +307,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const value = {
     user,
     login,
+    signup,
     updateUser,
     logout,
     language,
