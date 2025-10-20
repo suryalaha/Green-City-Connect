@@ -43,6 +43,9 @@ export const translations: Record<string, Record<string, string>> = {
     errorPasswordWeak: 'Password is too weak. Please include uppercase, lowercase, numbers, and symbols.',
     errorVerifyEmail: 'Please verify your email address.',
     errorVerifyMobile: 'Please verify your mobile number.',
+    termsAgreement: 'I agree to the',
+    termsLink: 'Terms & Conditions',
+    errorTermsRequired: 'You must accept the Terms & Conditions.',
 
     // BottomNav
     dashboard: 'Dashboard',

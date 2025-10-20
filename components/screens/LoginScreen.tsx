@@ -70,6 +70,7 @@ const LoginScreen: React.FC = () => {
   const [address, setAddress] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [passwordStrength, setPasswordStrength] = useState<'none' | 'weak' | 'medium' | 'strong'>('none');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [mobileOtpSent, setMobileOtpSent] = useState(false);
@@ -113,6 +114,7 @@ const LoginScreen: React.FC = () => {
 
       if (!isEmailVerified) errors.emailOtp = t('errorVerifyEmail');
       if (!isMobileVerified) errors.mobileOtp = t('errorVerifyMobile');
+      if (!termsAccepted) errors.terms = t('errorTermsRequired');
 
       setSignUpErrors(errors);
       const isValid = Object.keys(errors).length === 0;
@@ -125,7 +127,7 @@ const LoginScreen: React.FC = () => {
     if (!isLoginView) {
         validateSignUp();
     }
-  }, [firstName, lastName, signUpEmail, mobile, address, signUpPassword, isEmailVerified, isMobileVerified, isLoginView]);
+  }, [firstName, lastName, signUpEmail, mobile, address, signUpPassword, isEmailVerified, isMobileVerified, termsAccepted, isLoginView]);
 
 
   const validateLogin = () => {
@@ -370,6 +372,26 @@ const LoginScreen: React.FC = () => {
               />
                {signUpErrors.signUpPassword && <p className="text-red-500 text-xs mt-1">{signUpErrors.signUpPassword}</p>}
               <PasswordStrengthIndicator strength={passwordStrength} t={t} />
+            </div>
+            
+            <div>
+              <div className="flex items-start">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded mt-0.5 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-dark-primary"
+                  aria-describedby="terms-error"
+                />
+                <label htmlFor="terms" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  {t('termsAgreement')}{' '}
+                  <a href="#" onClick={(e) => e.preventDefault()} className="font-medium text-primary dark:text-dark-primary hover:underline">
+                    {t('termsLink')}
+                  </a>
+                </label>
+              </div>
+              {signUpErrors.terms && <p id="terms-error" className="text-red-500 text-xs mt-1 ml-6">{signUpErrors.terms}</p>}
             </div>
 
             <button
