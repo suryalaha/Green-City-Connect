@@ -2,7 +2,7 @@
 // NOTE: This file contains JSX and should ideally have a .tsx extension,
 // but is named .ts to match the provided file structure and error messages.
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import React, from 'react';
 import { User, WasteLog, Booking, Pickup, Complaint, Payment, SubscriptionPlan, Admin, Announcement, AdminMessage } from '../types';
 import { translations } from '../utils/translations';
 import { Screen } from '../App';
@@ -31,7 +31,7 @@ interface AppContextType {
   loggedInUser: (User | Admin) | null;
   login: (email: string, password: string) => Promise<void>;
   adminLogin: (mobile: string, password: string) => Promise<void>;
-  signup: (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription' | 'role'>) => Promise<User>;
+  signup: (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription' | 'role' | 'status'>) => Promise<User>;
   updateUser: (updatedData: Partial<User>) => void;
   logout: () => void;
   language: Language;
@@ -40,15 +40,16 @@ interface AppContextType {
   outstandingBalance: number;
   addWasteLog: (type: 'wet' | 'dry' | 'mixed') => boolean;
   wasteLogs: WasteLog[];
-  addBooking: (booking: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus'>) => Booking;
+  addBooking: (booking: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus' | 'userId'>) => Booking;
   bookings: Booking[];
   pickupHistory: Pickup[];
   complaints: Complaint[];
-  addComplaint: (complaint: Omit<Complaint, 'id' | 'date' | 'status'>) => void;
+  addComplaint: (complaint: Omit<Complaint, 'id' | 'date' | 'status' | 'userId'>) => void;
   theme: Theme;
   toggleTheme: () => void;
   payments: Payment[];
-  makePayment: (amount: number) => Promise<Payment>;
+  initiatePayment: (amount: number) => Promise<Payment>;
+  uploadPaymentScreenshot: (paymentId: string, screenshotUrl: string) => Promise<void>;
   payForBooking: (bookingId: string) => Promise<Payment>;
   currentScreen: Screen;
   setCurrentScreen: (screen: Screen) => void;
@@ -61,13 +62,19 @@ interface AppContextType {
   sendAdminMessage: (userId: string, text: string) => void;
   getUnreadMessageCount: (userId: string) => number;
   markMessagesAsRead: (userId: string) => void;
+  // Admin functions
+  updateUserStatus: (userId: string, status: User['status']) => void;
+  deleteUser: (userId: string) => void;
+  updatePaymentStatus: (paymentId: string, status: Payment['status']) => void;
+  updateBooking: (bookingId: string, updatedBooking: Partial<Booking>) => void;
+  updateComplaint: (complaintId: string, updatedComplaint: Partial<Complaint>) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = React.createContext<AppContextType | undefined>(undefined);
 
 // Helper for localStorage
 const usePersistedState = <T,>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
-    const [state, setState] = useState<T>(() => {
+    const [state, setState] = React.useState<T>(() => {
         try {
             const storedValue = localStorage.getItem(key);
             return storedValue ? JSON.parse(storedValue) : defaultValue;
@@ -77,7 +84,7 @@ const usePersistedState = <T,>(key: string, defaultValue: T): [T, React.Dispatch
         }
     });
 
-    useEffect(() => {
+    React.useEffect(() => {
         try {
             localStorage.setItem(key, JSON.stringify(state));
         } catch (error) {
@@ -89,9 +96,9 @@ const usePersistedState = <T,>(key: string, defaultValue: T): [T, React.Dispatch
 };
 
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [loggedInUser, setLoggedInUser] = useState<(User | Admin) | null>(null);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [loggedInUser, setLoggedInUser] = React.useState<(User | Admin) | null>(null);
+  const [currentScreen, setCurrentScreen] = React.useState<Screen>('dashboard');
   
   const [users, setUsers] = usePersistedState<User[]>('users', []);
   const [adminMessages, setAdminMessages] = usePersistedState<AdminMessage[]>('adminMessages', []);
@@ -99,7 +106,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     { id: 'anno1', title: 'Holiday Schedule Update', content: 'Please note that waste collection will be postponed by one day during the upcoming national holiday week.', timestamp: Date.now() - 86400000 * 2 }
   ]);
   
-  useEffect(() => {
+  React.useEffect(() => {
     // Initialize with a default user if none exist
     if (users.length === 0) {
        const sampleUser: User = {
@@ -111,35 +118,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             householdId: 'GCC-JD-A4B8',
             subscription: { planId: 'plan_basic', status: 'active', nextRenewalDate: getNextRenewalDate() },
             role: 'user',
+            status: 'active',
         };
         setUsers([sampleUser]);
     }
   }, []);
 
-  const [language, setLanguage] = useState<Language>('en');
-  const [outstandingBalance, setOutstandingBalance] = useState(75.00);
-  const [wasteLogs, setWasteLogs] = useState<WasteLog[]>([]);
+  const [language, setLanguage] = React.useState<Language>('en');
+  const [outstandingBalance, setOutstandingBalance] = React.useState(75.00);
+  const [wasteLogs, setWasteLogs] = React.useState<WasteLog[]>([]);
   const [bookings, setBookings] = usePersistedState<Booking[]>('bookings', [
-    { id: 'b1', date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0], time: '10:00', notes: 'Old furniture pickup', reminderEnabled: true, status: 'completed', amount: 150.00, paymentStatus: 'paid' },
-    { id: 'b2', date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], time: '14:00', notes: 'Garden waste', reminderEnabled: false, status: 'cancelled', amount: 150.00, paymentStatus: 'unpaid' },
+    { id: 'b1', userId: '1', date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0], time: '10:00', notes: 'Old furniture pickup', reminderEnabled: true, status: 'completed', amount: 150.00, paymentStatus: 'paid' },
+    { id: 'b2', userId: '1', date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], time: '14:00', notes: 'Garden waste', reminderEnabled: false, status: 'cancelled', amount: 150.00, paymentStatus: 'unpaid' },
   ]);
-  const [pickupHistory, setPickupHistory] = useState<Pickup[]>([
+  const [pickupHistory, setPickupHistory] = React.useState<Pickup[]>([
     { type: 'recycling', date: new Date(Date.now() - 86400000 * 60).toISOString() },
     { type: 'compost', date: new Date(Date.now() - 86400000 * 30).toISOString() },
   ]);
    const [complaints, setComplaints] = usePersistedState<Complaint[]>('complaints', [
-        { id: 'c1', date: new Date(Date.now() - 86400000 * 5).toISOString(), issueType: 'missed-pickup', description: 'The truck did not come down our street today.', status: 'resolved' },
-        { id: 'c2', date: new Date(Date.now() - 86400000).toISOString(), issueType: 'service-issue', description: 'The bins were left in the middle of the driveway.', status: 'in-progress' }
+        { id: 'c1', userId: '1', date: new Date(Date.now() - 86400000 * 5).toISOString(), issueType: 'missed-pickup', description: 'The truck did not come down our street today.', status: 'resolved' },
+        { id: 'c2', userId: '1', date: new Date(Date.now() - 86400000).toISOString(), issueType: 'service-issue', description: 'The bins were left in the middle of the driveway.', status: 'in-progress' }
     ]);
   const [payments, setPayments] = usePersistedState<Payment[]>('payments', [
-    { id: 'TXN-BOOK-162781', date: new Date(Date.now() - 86400000 * 10).toISOString(), amount: 150.00, status: 'paid' },
-    { id: 'TXN1003', date: '2024-07-01', amount: 75.00, status: 'paid' },
-    { id: 'TXN1002', date: '2024-06-01', amount: 75.00, status: 'paid' },
-    { id: 'TXN1001', date: '2024-05-01', amount: 75.00, status: 'paid' },
+    { id: 'TXN-BOOK-162781', userId: '1', date: new Date(Date.now() - 86400000 * 10).toISOString(), amount: 150.00, status: 'verified' },
+    { id: 'TXN1003', userId: '1', date: '2024-07-01', amount: 75.00, status: 'verified' },
+    { id: 'TXN1002', userId: '1', date: '2024-06-01', amount: 75.00, status: 'verified' },
+    { id: 'TXN1001', userId: '1', date: '2024-05-01', amount: 75.00, status: 'verified' },
   ]);
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  const [theme, setTheme] = React.useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
   
-  useEffect(() => {
+  React.useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
@@ -150,12 +158,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const login = (email: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const isTestEmail = email.toLowerCase() === 'suryalaha12@gmail.com';
-      let userToLogin = isTestEmail ? users.find(u => u.id === '1') : users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-      if (!userToLogin) {
-        return reject(new Error('errorUserNotFound'));
-      }
+      let userToLogin = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (!userToLogin) return reject(new Error('errorUserNotFound'));
+      if (userToLogin.status === 'blocked') return reject(new Error('errorAccountBlocked'));
 
       if (password === '55566632' || userToLogin.password === password) {
         const storedPicture = localStorage.getItem(`profilePic_${userToLogin.id}`);
@@ -174,9 +179,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const adminLogin = (mobile: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const adminToLogin = MOCK_ADMINS.find(a => a.mobile === mobile);
-       if (!adminToLogin) {
-          return reject(new Error('errorAdminNotFound'));
-      }
+       if (!adminToLogin) return reject(new Error('errorAdminNotFound'));
       if (adminToLogin.password === password) {
         setLoggedInUser(adminToLogin);
         resolve();
@@ -186,21 +189,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const signup = (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription' | 'role'>): Promise<User> => {
+  const signup = (userData: Omit<User, 'id' | 'householdId' | 'profilePicture' | 'subscription' | 'role' | 'status'>): Promise<User> => {
     return new Promise((resolve, reject) => {
-        if (userData.email.toLowerCase() === 'suryalaha12@gmail.com') return reject(new Error('This email is reserved for testing and cannot be used for sign up.'));
         if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) return reject(new Error('A user with this email already exists.'));
         
-        const generateHouseholdId = (firstName: string, lastName: string, address: string): string => {
-            const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+        const generateHouseholdId = (name: string, address: string): string => {
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
             let hash = 0;
             for (let i = 0; i < address.length; i++) hash = ((hash << 5) - hash) + address.charCodeAt(i), hash |= 0;
             const shortHash = Math.abs(hash).toString(16).slice(0, 4).toUpperCase();
             return `GCC-${initials}-${shortHash}`;
         };
-        const [firstName, ...lastNameParts] = userData.name.split(' ');
 
-        const newUser: User = { ...userData, id: Date.now().toString(), householdId: generateHouseholdId(firstName, lastNameParts.join(' '), userData.address), subscription: { planId: 'plan_basic', status: 'active', nextRenewalDate: getNextRenewalDate() }, role: 'user' };
+        const newUser: User = { ...userData, id: Date.now().toString(), householdId: generateHouseholdId(userData.name, userData.address), subscription: { planId: 'plan_basic', status: 'active', nextRenewalDate: getNextRenewalDate() }, role: 'user', status: 'active' };
         setUsers(prev => [...prev, newUser]);
         setLoggedInUser(newUser);
         resolve(newUser);
@@ -222,7 +223,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentScreen('dashboard');
   };
 
-  const t = useCallback((key: string): string => {
+  const t = React.useCallback((key: string): string => {
     const translationSet = translations[language] as Record<string, string | undefined> | undefined;
     return translationSet?.[key] || translations.en[key] || key;
   }, [language]);
@@ -242,44 +243,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return isThirdStrike;
   };
 
-  const addBooking = (bookingData: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus'>): Booking => {
-      const newBooking: Booking = { ...bookingData, id: `B${Date.now()}`, status: 'scheduled', amount: 150.00, paymentStatus: 'unpaid' };
+  const addBooking = (bookingData: Omit<Booking, 'id' | 'status' | 'amount' | 'paymentStatus' | 'userId'>): Booking => {
+      if (loggedInUser?.role !== 'user') throw new Error("Only users can add bookings");
+      const newBooking: Booking = { ...bookingData, id: `B${Date.now()}`, userId: loggedInUser.id, status: 'scheduled', amount: 150.00, paymentStatus: 'unpaid' };
       setBookings(prev => [newBooking, ...prev]);
       return newBooking;
   };
 
-  const addComplaint = (complaintData: Omit<Complaint, 'id' | 'date' | 'status'>) => {
-    const newComplaint: Complaint = { ...complaintData, id: `c${Date.now()}`, date: new Date().toISOString(), status: 'submitted' };
+  const addComplaint = (complaintData: Omit<Complaint, 'id' | 'date' | 'status' | 'userId'>) => {
+    if (loggedInUser?.role !== 'user') throw new Error("Only users can add complaints");
+    const newComplaint: Complaint = { ...complaintData, id: `c${Date.now()}`, userId: loggedInUser.id, date: new Date().toISOString(), status: 'submitted' };
     setComplaints(prev => [newComplaint, ...prev]);
   };
 
-  const makePayment = (amount: number): Promise<Payment> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const isSuccess = Math.random() < 0.8; 
-        const paymentResult = { id: `TXN${Date.now()}`, date: new Date().toISOString(), amount: amount, status: isSuccess ? 'paid' : 'failed' } as Payment;
-        setPayments(prev => [paymentResult, ...prev]);
-        if (isSuccess) {
-          setOutstandingBalance(prev => Math.max(0, prev - amount));
-          resolve(paymentResult);
-        } else {
-          reject(paymentResult);
-        }
-      }, 3000);
+  const initiatePayment = (amount: number): Promise<Payment> => {
+    return new Promise((resolve) => {
+      if (loggedInUser?.role !== 'user') throw new Error("User not logged in");
+      const newPayment: Payment = { id: `TXN${Date.now()}`, userId: loggedInUser.id, date: new Date().toISOString(), amount, status: 'pending' };
+      setPayments(prev => [newPayment, ...prev]);
+      resolve(newPayment);
     });
+  };
+  
+  const uploadPaymentScreenshot = (paymentId: string, screenshotUrl: string): Promise<void> => {
+      return new Promise((resolve) => {
+          setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, screenshotUrl } : p));
+          resolve();
+      });
   };
 
   const payForBooking = (bookingId: string): Promise<Payment> => {
     return new Promise((resolve, reject) => {
       const booking = bookings.find(b => b.id === bookingId);
-      if (!booking || !booking.amount) return reject({ id: `TXN-FAIL-${Date.now()}`, date: new Date().toISOString(), amount: 150, status: 'failed' } as Payment);
+      if (!booking || !booking.amount || loggedInUser?.role !== 'user') return reject({ id: `TXN-FAIL-${Date.now()}`, date: new Date().toISOString(), amount: 150, status: 'failed' } as Payment);
       
       setTimeout(() => {
         const isSuccess = Math.random() < 0.8;
         setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, paymentStatus: isSuccess ? 'paid' : 'failed' } : b));
-        const paymentResult = { id: `TXN-BOOK-${bookingId.slice(-6)}`, date: new Date().toISOString(), amount: booking.amount, status: isSuccess ? 'paid' : 'failed' } as Payment;
+        const paymentResult: Payment = { id: `TXN-BOOK-${bookingId.slice(-6)}`, userId: loggedInUser.id, date: new Date().toISOString(), amount: booking.amount, status: isSuccess ? 'verified' : 'failed' };
         setPayments(prev => [paymentResult, ...prev]);
-        if (isSuccess) resolve(paymentResult); else reject(paymentResult);
+        if (isSuccess) {
+            setOutstandingBalance(prev => Math.max(0, prev - (booking.amount || 0)));
+            resolve(paymentResult);
+        } else {
+            reject(paymentResult);
+        }
       }, 3000);
     });
   };
@@ -291,12 +299,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         const currentPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === user.subscription.planId);
         const newPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === newPlanId);
-
         if (!currentPlan || !newPlan) return reject(new Error("Invalid plan selected"));
 
         const priceDifference = newPlan.pricePerMonth - currentPlan.pricePerMonth;
         try {
-            if (priceDifference > 0) await makePayment(priceDifference);
+            if (priceDifference > 0) await initiatePayment(priceDifference);
             const updatedUser = { ...user, subscription: { ...user.subscription, planId: newPlanId } };
             setLoggedInUser(updatedUser);
             setUsers(prevUsers => prevUsers.map(u => u.id === user.id ? updatedUser : u));
@@ -323,6 +330,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const markMessagesAsRead = (userId: string) => {
     setAdminMessages(prev => prev.map(msg => msg.userId === userId ? { ...msg, read: true } : msg));
   };
+  
+  // --- Admin Functions ---
+  const updateUserStatus = (userId: string, status: User['status']) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+  };
+  
+  const deleteUser = (userId: string) => {
+    if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    }
+  };
+  
+  const updatePaymentStatus = (paymentId: string, status: Payment['status']) => {
+    setPayments(prev => prev.map(p => {
+        if (p.id === paymentId) {
+            if (status === 'verified') {
+                setOutstandingBalance(bal => Math.max(0, bal - p.amount));
+            }
+            return { ...p, status };
+        }
+        return p;
+    }));
+  };
+  
+  const updateBooking = (bookingId: string, updatedBooking: Partial<Booking>) => {
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, ...updatedBooking } : b));
+  };
+  
+  const updateComplaint = (complaintId: string, updatedComplaint: Partial<Complaint>) => {
+    setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, ...updatedComplaint } : c));
+  };
 
 
   const value = {
@@ -346,7 +384,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     theme,
     toggleTheme,
     payments,
-    makePayment,
+    initiatePayment,
+    uploadPaymentScreenshot,
     payForBooking,
     currentScreen,
     setCurrentScreen,
@@ -359,13 +398,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     sendAdminMessage,
     getUnreadMessageCount,
     markMessagesAsRead,
+    // Admin
+    updateUserStatus,
+    deleteUser,
+    updatePaymentStatus,
+    updateBooking,
+    updateComplaint,
   };
 
   return React.createElement(AppContext.Provider, { value: value }, children);
 };
 
 export const useAppContext = () => {
-  const context = useContext(AppContext);
+  const context = React.useContext(AppContext);
   if (context === undefined) {
     throw new Error('useAppContext must be used within an AppProvider');
   }

@@ -8,23 +8,22 @@ import jsPDF from 'jspdf';
 // --- STATE MANAGEMENT (useReducer) ---
 
 interface State {
-  modal: 'none' | 'payment' | 'receipt' | 'failed' | 'details';
-  isVerifying: boolean;
-  activePayment: Payment | null; // For receipt, failed, or details modal
+  modal: 'none' | 'payment' | 'receipt' | 'failed' | 'details' | 'upload';
+  isProcessing: boolean; // General loading state
+  activePayment: Payment | null; 
 }
 
 type Action =
   | { type: 'OPEN_PAYMENT_MODAL' }
-  | { type: 'START_VERIFICATION' }
-  | { type: 'VERIFICATION_SUCCESS'; payload: Payment }
-  | { type: 'VERIFICATION_FAILURE'; payload: Payment }
-  | { type: 'RETRY_PAYMENT' }
+  | { type: 'INITIATE_PAYMENT'; payload: Payment }
+  | { type: 'UPLOAD_SUCCESS' }
+  | { type: 'PAYMENT_VERIFIED'; payload: Payment } // For old payments
   | { type: 'OPEN_RECEIPT_DETAILS'; payload: Payment }
   | { type: 'CLOSE_ALL_MODALS' };
 
 const initialState: State = {
   modal: 'none',
-  isVerifying: false,
+  isProcessing: false,
   activePayment: null,
 };
 
@@ -32,24 +31,10 @@ function paymentReducer(state: State, action: Action): State {
   switch (action.type) {
     case 'OPEN_PAYMENT_MODAL':
       return { ...state, modal: 'payment' };
-    case 'START_VERIFICATION':
-      return { ...state, modal: 'none', isVerifying: true, activePayment: null };
-    case 'VERIFICATION_SUCCESS':
-      return {
-        ...state,
-        isVerifying: false,
-        modal: 'receipt',
-        activePayment: action.payload,
-      };
-    case 'VERIFICATION_FAILURE':
-      return {
-        ...state,
-        isVerifying: false,
-        modal: 'failed',
-        activePayment: action.payload,
-      };
-    case 'RETRY_PAYMENT':
-      return { ...state, modal: 'none', isVerifying: true, activePayment: null };
+    case 'INITIATE_PAYMENT':
+      return { ...state, modal: 'upload', activePayment: action.payload };
+    case 'UPLOAD_SUCCESS':
+      return { ...state, modal: 'none', isProcessing: false, activePayment: null };
     case 'OPEN_RECEIPT_DETAILS':
       return { ...state, modal: 'details', activePayment: action.payload };
     case 'CLOSE_ALL_MODALS':
@@ -100,48 +85,74 @@ const PaymentModal: React.FC<{ onClose: () => void; amount: number; upiId: strin
     );
 };
 
-const ReceiptModal: React.FC<{ onClose: () => void; payment: Payment; t: (key: any) => string; }> = ({ onClose, payment, t }) => {
+const UploadScreenshotModal: React.FC<{
+  onClose: () => void;
+  payment: Payment;
+  t: (key: string) => string;
+  uploadPaymentScreenshot: (paymentId: string, url: string) => Promise<void>;
+  onSuccess: () => void;
+}> = ({ onClose, payment, t, uploadPaymentScreenshot, onSuccess }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+        setIsUploading(true);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const base64Url = reader.result as string;
+            await uploadPaymentScreenshot(payment.id, base64Url);
+            setIsUploading(false);
+            alert(t('uploadSuccess'));
+            onSuccess();
+        };
+        reader.onerror = () => {
+            setIsUploading(false);
+            alert('File reading failed.');
+        };
+    };
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-sm text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-2">{t('paymentSuccessful')}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('receiptSent')}</p>
-                <div className="text-left bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm">
-                    <div className="flex justify-between"><span>{t('transactionId')}:</span> <span className="font-mono">{payment.id}</span></div>
-                    <div className="flex justify-between"><span>{t('date')}:</span> <span>{new Date(payment.date).toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>{t('amountPaid')}:</span> <span className="font-bold">₹{payment.amount.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>{t('paymentMethod')}:</span> <span>{t('upi')}</span></div>
-                </div>
-                <button onClick={onClose} className="mt-6 w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
-                    {t('done')}
+            <Card className="w-full max-w-sm relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <h2 className="text-xl font-bold mb-2">{t('uploadScreenshot')}</h2>
+                <p className="text-sm text-gray-500 mb-4">{t('uploadScreenshotInfo')}</p>
+                
+                <input type="file" id="screenshot" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                
+                {previewUrl && <img src={previewUrl} alt="Preview" className="mt-4 rounded-lg max-h-40 mx-auto" />}
+                
+                <button onClick={handleUpload} disabled={!file || isUploading} className="w-full mt-4 bg-primary text-white py-2 rounded-md disabled:bg-gray-400">
+                    {isUploading ? t('uploading') : t('upload')}
                 </button>
             </Card>
         </div>
     );
 };
 
+
 const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user: User | null; t: (key: any) => string; }> = ({ onClose, payment, user, t }) => {
     const handleDownload = () => {
         const doc = new jsPDF();
-
-        // Header
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
         doc.text('Green City Connect', 105, 20, { align: 'center' });
         doc.setFontSize(16);
         doc.setFont('helvetica', 'normal');
         doc.text('Transaction Receipt', 105, 30, { align: 'center' });
-
-        // Line separator
         doc.setLineWidth(0.5);
         doc.line(20, 35, 190, 35);
-
-        // Transaction Details
         doc.setFontSize(12);
         let yPos = 50;
         const addDetail = (label: string, value: string) => {
@@ -151,25 +162,16 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user
             doc.text(value, 80, yPos);
             yPos += 10;
         };
-
         addDetail(`${t('transactionId')}:`, payment.id);
         addDetail(`${t('date')}:`, new Date(payment.date).toLocaleString());
-        if (user?.householdId) {
-            addDetail(`${t('householdId')}:`, user.householdId);
-        }
+        if (user?.householdId) addDetail(`${t('householdId')}:`, user.householdId);
         addDetail(`${t('amountPaid')}:`, `₹${payment.amount.toFixed(2)}`);
         addDetail(`${t('paymentMethod')}:`, t('upi'));
-        addDetail(`${t('status')}:`, t(payment.status).toUpperCase());
-
-        // Line separator
+        addDetail(`${t('status')}:`, t(`status_${payment.status}`).toUpperCase());
         doc.line(20, yPos, 190, yPos);
         yPos += 15;
-
-        // Footer
         doc.setFontSize(10);
         doc.text('Thank you for your payment!', 105, yPos, { align: 'center' });
-
-        // Save the PDF
         doc.save(`receipt-${payment.id}.pdf`);
     };
 
@@ -188,7 +190,7 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user
                     )}
                     <div className="flex justify-between"><span>{t('amountPaid')}:</span> <span className="font-bold">₹{payment.amount.toFixed(2)}</span></div>
                     <div className="flex justify-between"><span>{t('paymentMethod')}:</span> <span>{t('upi')}</span></div>
-                    <div className="flex justify-between"><span>{t('status')}:</span> <span className="font-semibold text-green-600 dark:text-green-400 capitalize">{t(payment.status)}</span></div>
+                    <div className="flex justify-between"><span>{t('status')}:</span> <span className="font-semibold text-green-600 dark:text-green-400 capitalize">{t(`status_${payment.status}`)}</span></div>
                 </div>
                 <div className="flex space-x-4">
                     <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-600 text-foreground dark:text-dark-foreground py-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
@@ -203,46 +205,31 @@ const ReceiptDetailModal: React.FC<{ onClose: () => void; payment: Payment; user
     );
 };
 
-const PaymentFailedModal: React.FC<{ onClose: () => void; onRetry: () => void; t: (key: any) => string; }> = ({ onClose, onRetry, t }) => {
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-sm text-center">
-                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-2">{t('paymentFailed')}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('paymentFailedDesc')}</p>
-                <div className="flex space-x-4">
-                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-600 text-foreground dark:text-dark-foreground py-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
-                        {t('close')}
-                    </button>
-                    <button onClick={onRetry} className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
-                        {t('tryAgain')}
-                    </button>
-                </div>
-            </Card>
-        </div>
-    );
-};
+const PaymentStatusBadge: React.FC<{ status: Payment['status'], t: (key: string) => string }> = ({ status, t }) => {
+    const statusStyles = {
+        pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+        verified: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+        failed: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+        rejected: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    }
+    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status]}`}>{t(`status_${status}`)}</span>
+}
+
 
 // --- MAIN COMPONENT ---
 
 const PaymentScreen: React.FC = () => {
     const { t } = useTranslations();
-    const { loggedInUser: user, outstandingBalance, payments, makePayment } = useAppContext();
+    const { loggedInUser, outstandingBalance, payments, initiatePayment, uploadPaymentScreenshot } = useAppContext();
+    const user = loggedInUser as User;
     
     const [state, dispatch] = useReducer(paymentReducer, initialState);
     const [autoRenewal, setAutoRenewal] = useState(true);
-    const [isReminderEnabled, setIsReminderEnabled] = useState(false);
-    const [reminderDate, setReminderDate] = useState('');
-    const [reminderTime, setReminderTime] = useState('');
-    const [activeReminder, setActiveReminder] = useState<{ date: string; time: string } | null>(null);
-
     const [customAmount, setCustomAmount] = useState('');
     const [amountError, setAmountError] = useState('');
     const [amountToPay, setAmountToPay] = useState(outstandingBalance);
+    
+    const userPayments = payments.filter(p => p.userId === user?.id);
 
     useEffect(() => {
         setAmountToPay(outstandingBalance);
@@ -254,126 +241,74 @@ const PaymentScreen: React.FC = () => {
         const value = e.target.value;
         setCustomAmount(value);
         const numericValue = parseFloat(value);
-        
-        if (value === '') {
-            setAmountError('');
-            setAmountToPay(outstandingBalance);
-            return;
-        }
-
-        if (isNaN(numericValue) || numericValue <= 0) {
-            setAmountError(t('errorInvalidAmount'));
-        } else if (numericValue > outstandingBalance) {
-            setAmountError(t('errorAmountTooHigh').replace('{balance}', outstandingBalance.toFixed(2)));
-        } else {
-            setAmountError('');
-            setAmountToPay(numericValue);
-        }
+        if (value === '') { setAmountError(''); setAmountToPay(outstandingBalance); return; }
+        if (isNaN(numericValue) || numericValue <= 0) setAmountError(t('errorInvalidAmount'));
+        else if (numericValue > outstandingBalance) setAmountError(t('errorAmountTooHigh').replace('{balance}', outstandingBalance.toFixed(2)));
+        else { setAmountError(''); setAmountToPay(numericValue); }
     };
 
     const handlePayNowClick = () => {
         if (amountError) return;
-        if (amountToPay > 0) {
-            dispatch({ type: 'OPEN_PAYMENT_MODAL' });
-        }
+        if (amountToPay > 0) dispatch({ type: 'OPEN_PAYMENT_MODAL' });
     };
 
     const handlePaymentModalClose = async () => {
-        dispatch({ type: 'START_VERIFICATION' });
-        try {
-            const newPayment = await makePayment(amountToPay);
-            dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
-        } catch (failedPayment) {
-            dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
-        }
+        const newPayment = await initiatePayment(amountToPay);
+        dispatch({ type: 'INITIATE_PAYMENT', payload: newPayment });
     };
     
-    const handleCloseAllModals = () => {
-        dispatch({ type: 'CLOSE_ALL_MODALS' });
-    };
-
-    const handleRetryPayment = async () => {
-        dispatch({ type: 'RETRY_PAYMENT' });
-        try {
-            const newPayment = await makePayment(amountToPay);
-            dispatch({ type: 'VERIFICATION_SUCCESS', payload: newPayment });
-        } catch (failedPayment) {
-            dispatch({ type: 'VERIFICATION_FAILURE', payload: failedPayment as Payment });
-        }
-    };
-
-    const handleViewReceiptDetails = (payment: Payment) => {
-        dispatch({ type: 'OPEN_RECEIPT_DETAILS', payload: payment });
-    };
-
-    const handleSetReminder = () => {
-        if (!reminderDate || !reminderTime) {
-            alert(t('errorSetReminderDateTime'));
-            return;
-        }
-        const newReminder = { date: reminderDate, time: reminderTime };
-        setActiveReminder(newReminder);
-        setReminderDate('');
-        setReminderTime('');
-        alert(t('reminderSetSuccess').replace('{date}', new Date(newReminder.date).toLocaleDateString()).replace('{time}', newReminder.time));
-    };
-    
-    const handleToggleReminder = () => {
-        const newEnabledState = !isReminderEnabled;
-        setIsReminderEnabled(newEnabledState);
-        if (!newEnabledState) {
-            setActiveReminder(null); // Clear reminder when disabled
-        }
-    };
+    const handleCloseAllModals = () => dispatch({ type: 'CLOSE_ALL_MODALS' });
+    const handleViewReceiptDetails = (payment: Payment) => dispatch({ type: 'OPEN_RECEIPT_DETAILS', payload: payment });
 
     return (
         <div>
             {state.modal === 'payment' && <PaymentModal onClose={handlePaymentModalClose} amount={amountToPay} upiId="suryalaha@upi" payeeName="Green City Connect" t={t} />}
-            {state.modal === 'receipt' && state.activePayment && <ReceiptModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} />}
-            {state.modal === 'failed' && <PaymentFailedModal onClose={handleCloseAllModals} onRetry={handleRetryPayment} t={t} />}
-            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user as User} t={t} />}
+            {state.modal === 'upload' && state.activePayment && <UploadScreenshotModal onClose={handleCloseAllModals} payment={state.activePayment} t={t} uploadPaymentScreenshot={uploadPaymentScreenshot} onSuccess={() => dispatch({ type: 'UPLOAD_SUCCESS' })} />}
+            {state.modal === 'details' && state.activePayment && <ReceiptDetailModal onClose={handleCloseAllModals} payment={state.activePayment} user={user} t={t} />}
 
             <h1 className="text-3xl font-bold mb-4">{t('payment')}</h1>
             <Card>
                 <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h2 className="text-xl font-semibold">{t('outstandingBalance')}</h2>
-                        <p className={`text-3xl font-bold ${outstandingBalance > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                            ₹{outstandingBalance.toFixed(2)}
-                        </p>
+                        <p className={`text-3xl font-bold ${outstandingBalance > 0 ? 'text-red-500' : 'text-green-500'}`}>₹{outstandingBalance.toFixed(2)}</p>
                     </div>
-                    <button 
-                        onClick={handlePayNowClick}
-                        disabled={state.isVerifying || amountToPay <= 0 || !!amountError}
-                        className="bg-primary dark:bg-dark-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark text-center font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
-                    >
-                         {state.isVerifying ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                {t('verifyingPayment')}
-                            </>
-                         ) : (
-                            `${t('payNow')} ₹${amountToPay.toFixed(2)}`
-                         )}
+                    <button onClick={handlePayNowClick} disabled={state.isProcessing || amountToPay <= 0 || !!amountError} className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[180px]">
+                         {`${t('payNow')} ₹${amountToPay.toFixed(2)}`}
                     </button>
                 </div>
-                 {outstandingBalance > 100 && (
+                 {outstandingBalance > 0 && (
                     <div className="mt-4 pt-4 border-t dark:border-gray-700">
                         <label htmlFor="custom-amount" className="block text-sm font-medium mb-1">{t('enterCustomAmount')}</label>
-                        <input
-                            id="custom-amount"
-                            type="number"
-                            value={customAmount}
-                            onChange={handleCustomAmountChange}
-                            placeholder={`Max: ₹${outstandingBalance.toFixed(2)}`}
-                            className={`w-full sm:w-1/2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ${amountError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`}
-                        />
+                        <input id="custom-amount" type="number" value={customAmount} onChange={handleCustomAmountChange} placeholder={`Max: ₹${outstandingBalance.toFixed(2)}`} className={`w-full sm:w-1/2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ${amountError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`} />
                         {amountError && <p className="text-red-500 text-xs mt-1">{amountError}</p>}
                     </div>
                 )}
+            </Card>
+
+            <Card className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">{t('paymentHistory')}</h2>
+                <ul className="space-y-1">
+                    {userPayments.map((p, index) => (
+                        <li key={p.id} className={`flex justify-between items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-gray-50 dark:bg-slate-700/50' : ''}`}>
+                            <div className="flex items-center space-x-4">
+                                <div>
+                                    <p className="font-semibold">₹{p.amount.toFixed(2)}</p>
+                                    <p className="text-sm text-gray-500">{t('paymentOn')} {new Date(p.date).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <PaymentStatusBadge status={p.status} t={t} />
+                                {p.status === 'verified' && (
+                                    <button onClick={() => handleViewReceiptDetails(p)} className="flex items-center space-x-1 text-sm text-primary dark:text-dark-primary hover:underline" aria-label={`${t('downloadReceipt')} for ${p.id}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                        <span>{t('download')}</span>
+                                    </button>
+                                )}
+                            </div>
+                        </li>
+                    ))}
+                </ul>
             </Card>
 
             <Card className="mt-6">
@@ -386,90 +321,6 @@ const PaymentScreen: React.FC = () => {
                     </label>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('autoRenewalDesc')}</p>
-            </Card>
-
-            <Card className="mt-6">
-                <h2 className="text-xl font-semibold mb-2">{t('paymentReminders')}</h2>
-                <div className="flex justify-between items-center mb-4">
-                    <span>{t('enableReminders')}</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked={isReminderEnabled} onChange={handleToggleReminder} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                    </label>
-                </div>
-                {isReminderEnabled && (
-                    <div className="border-t dark:border-gray-700 pt-4">
-                        {activeReminder ? (
-                            <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-md text-center text-sm text-green-800 dark:text-green-200">
-                                <p>{t('reminderSetFor')} <strong>{new Date(activeReminder.date).toLocaleDateString()}</strong> at <strong>{activeReminder.time}</strong></p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('paymentReminderDesc')}</p>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <input
-                                        type="date"
-                                        value={reminderDate}
-                                        onChange={(e) => setReminderDate(e.target.value)}
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
-                                        aria-label={t('selectReminderDate')}
-                                    />
-                                    <input
-                                        type="time"
-                                        value={reminderTime}
-                                        onChange={(e) => setReminderTime(e.target.value)}
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
-                                        aria-label={t('selectReminderTime')}
-                                    />
-                                </div>
-                                <button onClick={handleSetReminder} className="w-full bg-secondary text-white py-2 rounded-md hover:opacity-90 transition-colors">
-                                    {t('setReminder')}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Card>
-
-            <Card className="mt-6">
-                <h2 className="text-xl font-semibold mb-4">{t('paymentHistory')}</h2>
-                <ul className="space-y-1">
-                    {payments.map((p, index) => {
-                        const isPaid = p.status === 'paid';
-                        return (
-                            <li key={p.id} className={`flex justify-between items-center p-3 rounded-md ${index % 2 === 0 ? 'bg-gray-50 dark:bg-slate-700/50' : ''}`}>
-                                <div className="flex items-center space-x-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPaid ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                                        {isPaid ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold">
-                                            ₹{p.amount.toFixed(2)}
-                                            {!isPaid && <span className="text-xs text-red-500 ml-2 font-medium">({t('failed')})</span>}
-                                        </p>
-                                        <p className="text-sm text-gray-500">{t('paymentOn')} {new Date(p.date).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                {isPaid && (
-                                    <button onClick={() => handleViewReceiptDetails(p)} className="flex items-center space-x-1 text-sm text-primary dark:text-dark-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-light rounded-md p-1" aria-label={`${t('downloadReceipt')} for ${p.id}`}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                        <span>{t('download')}</span>
-                                    </button>
-                                )}
-                            </li>
-                        )
-                    })}
-                </ul>
             </Card>
         </div>
     );

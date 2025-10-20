@@ -1,17 +1,64 @@
 // FIX: Implement the DashboardScreen component which was missing content.
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../ui/Card';
 import { useAppContext } from '../../context/AppContext';
 import { useTranslations } from '../../hooks/useTranslations';
-import { User } from '../../types';
+import { User, WasteLog } from '../../types';
+
+const StatCard: React.FC<{ title: string; value: string; icon: string; unit?: string }> = ({ title, value, icon, unit }) => (
+    <Card className="flex flex-col items-center justify-center text-center p-4">
+        <div className="text-4xl mb-2">{icon}</div>
+        <p className="text-2xl font-bold text-foreground dark:text-dark-foreground">{value}</p>
+        <h3 className="text-sm text-gray-500 dark:text-gray-400">{title}</h3>
+        {unit && <p className="text-xs text-gray-400 mt-1">{unit}</p>}
+    </Card>
+);
 
 const DashboardScreen: React.FC = () => {
-    const { loggedInUser, outstandingBalance, addWasteLog, announcements } = useAppContext();
+    const { loggedInUser, outstandingBalance, addWasteLog, announcements, wasteLogs } = useAppContext();
     const user = loggedInUser as User;
     const { t } = useTranslations();
     const [lastLog, setLastLog] = useState<'wet' | 'dry' | 'mixed' | null>(null);
-    const [adState, setAdState] = useState<'idle' | 'watching' | 'watched'>('idle');
     const [showSuccess, setShowSuccess] = useState(false);
+
+    const monthlyStats = useMemo(() => {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        
+        const getWeekNumber = (d: Date) => {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            // @ts-ignore
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return weekNo;
+        };
+
+        const logsThisMonth = wasteLogs.filter(log => log.timestamp >= startOfMonth);
+        const totalLogsThisMonth = logsThisMonth.length;
+        const dryLogsThisMonth = logsThisMonth.filter(log => log.type === 'dry').length;
+        const recyclingRate = totalLogsThisMonth > 0 ? (dryLogsThisMonth / totalLogsThisMonth) * 100 : 0;
+
+        const logsByWeek = wasteLogs.reduce((acc, log) => {
+            const week = getWeekNumber(new Date(log.timestamp));
+            (acc[week] = acc[week] || []).push(log);
+            return acc;
+        }, {} as Record<number, WasteLog[]>);
+
+        // FIX: Explicitly type reduce callback parameters to prevent type inference issues.
+        const greenBadges = Object.values(logsByWeek).reduce((count: number, weeklyLogs: WasteLog[]) => {
+            if (weeklyLogs.length >= 3 && !weeklyLogs.some(log => log.type === 'mixed')) {
+                return count + 1;
+            }
+            return count;
+        }, 0);
+
+        return {
+            totalLogsThisMonth,
+            recyclingRate: recyclingRate.toFixed(0),
+            greenBadges,
+        };
+    }, [wasteLogs]);
 
 
     useEffect(() => {
@@ -34,19 +81,6 @@ const DashboardScreen: React.FC = () => {
         if (wasFinedForThirdStrike) {
             alert(t('consecutiveFineMessage'));
         }
-    };
-
-    const handleWatchAd = () => {
-        setAdState('watching');
-        setTimeout(() => {
-            setAdState('watched');
-        }, 30000); // 30 seconds
-    };
-
-    const getAdButtonText = () => {
-        if (adState === 'watching') return t('watchingAd');
-        if (adState === 'watched') return t('thankYou');
-        return t('watchAd');
     };
 
     const nextPickupDate = new Date();
@@ -93,6 +127,15 @@ const DashboardScreen: React.FC = () => {
                     </div>
                 </Card>
             </div>
+            
+            <Card>
+                <h2 className="text-2xl font-semibold mb-4">{t('yourStats')}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard title={t('totalWasteLogged')} value={monthlyStats.totalLogsThisMonth.toString()} icon="🗑️" unit={t('logsThisMonth')} />
+                    <StatCard title={t('recyclingRate')} value={`${monthlyStats.recyclingRate}%`} icon="♻️" />
+                    <StatCard title={t('greenBadgesEarned')} value={monthlyStats.greenBadges.toString()} icon="🏆" />
+                </div>
+            </Card>
 
             <Card className="hover:!scale-100 hover:!-translate-y-0">
                 <h2 className="text-2xl font-semibold mb-2">{t('logYourWaste')}</h2>
@@ -124,18 +167,6 @@ const DashboardScreen: React.FC = () => {
                         </div>
                     )}
                 </div>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-secondary-500 to-teal-500 text-white hover:!-translate-y-0">
-                <h2 className="text-2xl font-semibold mb-2">{t('supportACause')}</h2>
-                <p className="text-sm opacity-90 mb-4">{t('supportACauseDesc')}</p>
-                <button
-                    onClick={handleWatchAd}
-                    disabled={adState !== 'idle'}
-                    className="w-full bg-white/20 text-white font-semibold py-3 rounded-lg hover:bg-white/30 transition-colors disabled:bg-white/10 disabled:cursor-not-allowed"
-                >
-                    {getAdButtonText()}
-                </button>
             </Card>
         </div>
     );

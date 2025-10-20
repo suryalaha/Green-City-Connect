@@ -10,6 +10,7 @@ export interface User {
   profilePicture?: string;
   subscription: UserSubscription;
   role: 'user';
+  status: 'active' | 'restricted' | 'blocked';
 }
 
 export interface Admin {
@@ -60,9 +61,11 @@ export interface Message {
 
 export interface Payment {
   id:string;
+  userId: string;
   date: string;
   amount: number;
-  status: 'paid' | 'pending' | 'failed';
+  status: 'pending' | 'verified' | 'failed' | 'rejected';
+  screenshotUrl?: string;
 }
 
 export interface WasteLog {
@@ -73,6 +76,7 @@ export interface WasteLog {
 
 export interface Booking {
   id: string;
+  userId: string;
   date: string;
   time: string;
   notes: string;
@@ -89,6 +93,7 @@ export interface Pickup {
 
 export interface Complaint {
   id: string;
+  userId: string;
   issueType: 'missed-pickup' | 'service-issue' | 'other';
   description: string;
   photo?: string;

@@ -163,23 +163,36 @@ const LoginScreen: React.FC = () => {
             return;
         }
         setEmailOtpSent(true);
-        alert(`${t('otpSentAlert')} (123456)`);
+        alert(t('emailOtpSentAlert'));
     }
     if (type === 'mobile') {
         if (!/^\+?[0-9]{10,12}$/.test(mobile.replace(/\s/g, ''))) {
             setSignUpErrors(prev => ({ ...prev, mobile: t('errorInvalidMobile')}));
             return;
         }
+        const MOCK_WHATSAPP_OTP = "123456";
+        const phoneNumber = '91' + mobile.replace(/\s|[^0-9]/g, '').slice(-10);
+        const message = t('whatsappOtpMessage').replace('{otp}', MOCK_WHATSAPP_OTP);
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        
+        window.open(whatsappUrl, '_blank');
         setMobileOtpSent(true);
-        alert(`${t('otpSentAlert')} (123456)`);
     }
   };
 
   const handleVerifyOtp = (type: 'email' | 'mobile') => {
-      const MOCK_OTP = "123456";
-      if (type === 'email' && emailOtp === MOCK_OTP) setIsEmailVerified(true), alert(t('emailVerifiedSuccess'));
-      else if (type === 'mobile' && mobileOtp === MOCK_OTP) setIsMobileVerified(true), alert(t('mobileVerifiedSuccess'));
-      else alert(t('invalidOtp'));
+      const MOCK_EMAIL_OTP = "2233";
+      const MOCK_WHATSAPP_OTP = "123456";
+      if (type === 'email' && emailOtp === MOCK_EMAIL_OTP) {
+          setIsEmailVerified(true);
+          alert(t('emailVerifiedSuccess'));
+      } else if (type === 'mobile' && mobileOtp === MOCK_WHATSAPP_OTP) {
+          setIsMobileVerified(true);
+          alert(t('mobileVerifiedSuccess'));
+      } else {
+          alert(t('invalidOtp'));
+      }
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -305,13 +318,13 @@ const LoginScreen: React.FC = () => {
               <label className="block text-sm font-medium mb-1">{t('mobileNumber')}</label>
                <div className="flex">
                   <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="9876543210" className={`${getSignUpInputClass('mobile')} rounded-r-none`} required disabled={mobileOtpSent}/>
-                  <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400 transition-colors hover:bg-secondary-700">{mobileOtpSent ? t('sent') : t('sendOtp')}</button>
+                  <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400 transition-colors hover:bg-secondary-700">{mobileOtpSent ? t('sent') : t('sendWhatsAppOtp')}</button>
               </div>
                {signUpErrors.mobile && <p className="text-danger text-xs mt-1">{signUpErrors.mobile}</p>}
             </div>
              {mobileOtpSent && !isMobileVerified && (
               <div>
-                  <label className="block text-sm font-medium mb-1">{t('mobileOtp')}</label>
+                  <label className="block text-sm font-medium mb-1">{t('whatsAppOtp')}</label>
                    <div className="flex">
                       <input type="text" value={mobileOtp} onChange={e => setMobileOtp(e.target.value)} className="w-full p-3 border rounded-l-lg dark:bg-slate-800 border-slate-200 dark:border-slate-700" maxLength={6}/>
                       <button type="button" onClick={() => handleVerifyOtp('mobile')} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm transition-colors hover:bg-secondary-700">{t('verify')}</button>
