@@ -296,6 +296,7 @@ export const translations: Record<string, Record<string, string>> = {
     
     // Inbox
     inboxTitle: 'Admin Messages',
+    viewAdminMessages: 'View messages from the admin team',
     noMessages: 'You have no messages from the admin.',
     
   },
@@ -324,6 +325,10 @@ export const translations: Record<string, Record<string, string>> = {
     editProfile: 'প্রোফাইল সম্পাদনা করুন',
     saveChanges: 'পরিবর্তন সেভ করুন',
     cancel: 'বাতিল করুন',
+    inbox: 'ইনবক্স',
+    inboxTitle: 'অ্যাডমিন বার্তা',
+    viewAdminMessages: 'অ্যাডমিন দলের থেকে বার্তা দেখুন',
+    noMessages: 'আপনার অ্যাডমিনের কাছ থেকে কোনও বার্তা নেই।',
     faqQ1: 'Why was I fined for logging "Mixed Waste"?',
     faqA1: 'To encourage proper waste segregation, a fine of ₹100 is automatically applied if you log "Mixed Waste" for three consecutive days. Please segregate your waste into Wet and Dry categories to avoid fines.',
     faqQ2: 'How do I pay my outstanding balance?',
@@ -362,6 +367,10 @@ export const translations: Record<string, Record<string, string>> = {
     editProfile: 'प्रोफ़ाइल संपादित करें',
     saveChanges: 'बदलाव सहेजें',
     cancel: 'रद्द करें',
+    inbox: 'इनबॉक्स',
+    inboxTitle: 'एडमिन संदेश',
+    viewAdminMessages: 'एडमिन टीम के संदेश देखें',
+    noMessages: 'आपके पास एडमिन से कोई संदेश नहीं है।',
     faqQ1: 'Why was I fined for logging "Mixed Waste"?',
     faqA1: 'To encourage proper waste segregation, a fine of ₹100 is automatically applied if you log "Mixed Waste" for three consecutive days. Please segregate your waste into Wet and Dry categories to avoid fines.',
     faqQ2: 'How do I pay my outstanding balance?',

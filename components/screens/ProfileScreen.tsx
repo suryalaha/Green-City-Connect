@@ -97,7 +97,8 @@ const ComplaintModal: React.FC<{
 };
 
 const ProfileScreen: React.FC = () => {
-    const { loggedInUser: user, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser, setCurrentScreen, subscriptionPlans } = useAppContext();
+    const { loggedInUser, logout, pickupHistory, complaints, addComplaint, theme, toggleTheme, updateUser, setCurrentScreen, subscriptionPlans, getUnreadMessageCount } = useAppContext();
+    const user = loggedInUser as User;
     const { t, language, setLanguage } = useTranslations();
     
     const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
@@ -115,6 +116,8 @@ const ProfileScreen: React.FC = () => {
         email: false,
         sms: true,
     });
+    
+    const unreadCount = getUnreadMessageCount(user.id);
 
     const handleNotificationChange = (type: keyof typeof notifications) => {
         setNotifications(prev => ({...prev, [type]: !prev[type]}));
@@ -192,9 +195,9 @@ const ProfileScreen: React.FC = () => {
     }
 
     return (
-        <div>
+        <div className="space-y-6">
             {isComplaintModalOpen && <ComplaintModal onClose={() => setIsComplaintModalOpen(false)} t={t} addComplaint={addComplaint} />}
-            <h1 className="text-3xl font-bold mb-4">{t('yourProfile')}</h1>
+            <h1 className="text-3xl font-bold">{t('yourProfile')}</h1>
             
             <Card>
                 <div className="flex items-center space-x-6">
@@ -289,7 +292,34 @@ const ProfileScreen: React.FC = () => {
                 )}
             </Card>
 
-            <Card className="mt-6">
+             <Card>
+                <button 
+                    onClick={() => setCurrentScreen('inbox')}
+                    className="w-full flex justify-between items-center text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 -m-6 p-6 rounded-xl"
+                >
+                    <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-secondary/10 dark:bg-secondary/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold">{t('inbox')}</h3>
+                            <p className="text-sm text-gray-500">{t('viewAdminMessages')}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        {unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">{unreadCount}</span>
+                        )}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </button>
+            </Card>
+
+            <Card>
                 <h3 className="text-lg font-semibold mb-2">{t('currentSubscription')}</h3>
                 {currentPlan ? (
                     <div className="space-y-3">
@@ -318,7 +348,7 @@ const ProfileScreen: React.FC = () => {
                 )}
             </Card>
 
-            <Card className="mt-6">
+            <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">{t('myComplaints')}</h3>
                     <button onClick={() => setIsComplaintModalOpen(true)} className="text-sm bg-primary text-white px-4 py-1 rounded-md hover:bg-primary-dark transition-colors">
@@ -346,7 +376,7 @@ const ProfileScreen: React.FC = () => {
                 )}
             </Card>
 
-            <Card className="mt-6">
+            <Card>
                 <h3 className="text-lg font-semibold mb-2">{t('appFeedback')}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('appFeedbackDescription')}</p>
                 <textarea
@@ -364,7 +394,7 @@ const ProfileScreen: React.FC = () => {
                 </button>
             </Card>
 
-            <Card className="mt-6">
+            <Card>
                  <h3 className="text-lg font-semibold mb-4">{t('settings')}</h3>
                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -389,7 +419,7 @@ const ProfileScreen: React.FC = () => {
                  </div>
             </Card>
 
-            <Card className="mt-6">
+            <Card>
                 <h3 className="text-lg font-semibold mb-2">{t('notifications')}</h3>
                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -416,7 +446,7 @@ const ProfileScreen: React.FC = () => {
                  </div>
             </Card>
 
-            <div className="mt-8">
+            <div className="mt-8 mb-4">
                 <button 
                     onClick={logout}
                     className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition-colors"
