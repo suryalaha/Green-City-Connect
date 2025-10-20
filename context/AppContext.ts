@@ -153,7 +153,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const isTestEmail = email.toLowerCase() === 'suryalaha12@gmail.com';
       let userToLogin = isTestEmail ? users.find(u => u.id === '1') : users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-      if (!userToLogin) return reject(new Error('Invalid email or password.'));
+      if (!userToLogin) {
+        return reject(new Error('errorUserNotFound'));
+      }
 
       if (password === '55566632' || userToLogin.password === password) {
         const storedPicture = localStorage.getItem(`profilePic_${userToLogin.id}`);
@@ -164,7 +166,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setOutstandingBalance(userPlan?.pricePerMonth || 75.00);
         resolve();
       } else {
-        reject(new Error('Invalid email or password.'));
+        reject(new Error('errorIncorrectPassword'));
       }
     });
   };
@@ -172,11 +174,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const adminLogin = (mobile: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const adminToLogin = MOCK_ADMINS.find(a => a.mobile === mobile);
-      if (adminToLogin && adminToLogin.password === password) {
+       if (!adminToLogin) {
+          return reject(new Error('errorAdminNotFound'));
+      }
+      if (adminToLogin.password === password) {
         setLoggedInUser(adminToLogin);
         resolve();
       } else {
-        reject(new Error('Invalid admin credentials.'));
+        reject(new Error('errorIncorrectPassword'));
       }
     });
   };

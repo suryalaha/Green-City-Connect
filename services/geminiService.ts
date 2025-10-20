@@ -22,6 +22,6 @@ export const getChatbotResponse = async (message: string): Promise<string> => {
     return response.text;
   } catch (error) {
     console.error("Gemini API error:", error);
-    return "Sorry, I'm having trouble connecting. Please try again later.";
+    return "I seem to be having a technical issue right now. Please try your question again in a few moments. If the problem continues, you can visit our Help section for more information.";
   }
 };

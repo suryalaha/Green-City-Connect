@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message } from '../types';
 import { getChatbotResponse } from '../services/geminiService';
 import { useTranslations } from '../hooks/useTranslations';
+import { useAppContext } from '../context/AppContext';
 
 interface ChatbotProps {
   onClose: () => void;
@@ -9,6 +10,9 @@ interface ChatbotProps {
 
 const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
   const { t } = useTranslations();
+  const { loggedInUser } = useAppContext();
+
+  const storageKey = loggedInUser ? `chatHistory_${loggedInUser.id}` : null;
 
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
@@ -21,9 +25,22 @@ const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
     }
   };
   
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: getGreetingMessage(), sender: 'bot', timestamp: Date.now() }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (!storageKey) {
+        return [{ id: '1', text: getGreetingMessage(), sender: 'bot', timestamp: Date.now() }];
+    }
+    try {
+        const storedHistory = localStorage.getItem(storageKey);
+        const parsedHistory = storedHistory ? JSON.parse(storedHistory) : null;
+        if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+            return parsedHistory;
+        }
+    } catch (error) {
+        console.error("Failed to parse chat history from localStorage:", error);
+    }
+    return [{ id: '1', text: getGreetingMessage(), sender: 'bot', timestamp: Date.now() }];
+  });
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,6 +51,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
 
   useEffect(scrollToBottom, [messages]);
 
+  useEffect(() => {
+    if (storageKey) {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(messages));
+        } catch (error) {
+            console.error("Failed to save chat history to localStorage:", error);
+        }
+    }
+  }, [messages, storageKey]);
+
+
   const handleSend = async () => {
     if (input.trim() === '' || isLoading) return;
 
@@ -43,7 +71,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
       sender: 'user',
       timestamp: Date.now(),
     };
-    setMessages(prev => [...prev, userMessage]);
+    
+    const newMessagesWithUser = [...messages, userMessage];
+    setMessages(newMessagesWithUser);
     setInput('');
     setIsLoading(true);
 
@@ -55,7 +85,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
         sender: 'bot',
         timestamp: Date.now(),
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages([...newMessagesWithUser, botMessage]);
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -63,7 +93,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onClose }) => {
         sender: 'bot',
         timestamp: Date.now(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages([...newMessagesWithUser, errorMessage]);
     } finally {
       setIsLoading(false);
     }

@@ -60,7 +60,7 @@ const LoginScreen: React.FC = () => {
   const [loginIdentifier, setLoginIdentifier] = useState(''); // Holds email or mobile
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [loginErrors, setLoginErrors] = useState<{ identifier?: string; password?: string; general?: string }>({});
 
   // Sign Up State
   const [firstName, setFirstName] = useState('');
@@ -118,23 +118,22 @@ const LoginScreen: React.FC = () => {
 
 
   const validateLogin = () => {
-    setLoginError('');
+    const errors: { identifier?: string; password?: string } = {};
     if (isLoginModeAdmin) {
         if (!/^[0-9]{10,12}$/.test(loginIdentifier)) {
-            setLoginError(t('errorInvalidMobile'));
-            return false;
+            errors.identifier = t('errorInvalidMobile');
         }
     } else {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginIdentifier)) {
-            setLoginError(t('errorInvalidEmail'));
-            return false;
+            errors.identifier = t('errorInvalidEmail');
         }
     }
     if (loginPassword.length < 6) {
-        setLoginError(t('errorPasswordLength'));
-        return false;
+        errors.password = t('errorPasswordLength');
     }
-    return true;
+    
+    setLoginErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -142,6 +141,7 @@ const LoginScreen: React.FC = () => {
     if (!validateLogin()) return;
     
     setIsLoading(true);
+    setLoginErrors({}); // Clear previous auth errors
     try {
         if (isLoginModeAdmin) {
             await adminLogin(loginIdentifier, loginPassword);
@@ -149,7 +149,8 @@ const LoginScreen: React.FC = () => {
             await login(loginIdentifier, loginPassword);
         }
     } catch (error) {
-        setLoginError((error as Error).message);
+        const errorMessageKey = (error as Error).message;
+        setLoginErrors({ general: t(errorMessageKey) || t('errorInvalidCredentials') });
     } finally {
         setIsLoading(false);
     }
@@ -201,7 +202,13 @@ const LoginScreen: React.FC = () => {
       setPasswordStrength(checkPasswordStrength(newPassword));
   };
   
-  const getInputClass = (fieldName: string) => `w-full p-3 border rounded-lg bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 transition-colors focus:outline-none focus:ring-2 ${signUpErrors[fieldName] ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`;
+  const getSignUpInputClass = (fieldName: string) => `w-full p-3 border rounded-lg bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 transition-colors focus:outline-none focus:ring-2 ${signUpErrors[fieldName] ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`;
+  
+  const clearLoginState = () => {
+    setLoginIdentifier('');
+    setLoginPassword('');
+    setLoginErrors({});
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-100 via-white to-secondary-100 dark:from-primary-900/20 dark:via-dark-background dark:to-secondary-900/20 p-4">
@@ -212,16 +219,16 @@ const LoginScreen: React.FC = () => {
         {isLoginView && (
             <div className="flex justify-center mb-6">
                 <div className="relative flex p-1 bg-gray-200 dark:bg-gray-700 rounded-full">
-                    <button onClick={() => { setIsLoginModeAdmin(false); setLoginError(''); setLoginIdentifier(''); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${!isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('user')}</button>
-                    <button onClick={() => { setIsLoginModeAdmin(true); setLoginError(''); setLoginIdentifier(''); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('admin')}</button>
+                    <button onClick={() => { setIsLoginModeAdmin(false); clearLoginState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${!isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('user')}</button>
+                    <button onClick={() => { setIsLoginModeAdmin(true); clearLoginState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('admin')}</button>
                     <span className={`absolute top-1 left-1 h-8 w-24 rounded-full bg-gradient-to-r from-primary to-secondary shadow-md transform transition-transform ${isLoginModeAdmin ? 'translate-x-full' : ''}`}></span>
                 </div>
             </div>
         )}
         
         {isLoginView ? (
-          <form onSubmit={handleLogin} noValidate className="space-y-6">
-            {loginError && <p className="text-danger text-sm text-center -mt-2 mb-4">{loginError}</p>}
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
+            {loginErrors.general && <p className="text-danger text-sm text-center -mt-2 mb-2">{loginErrors.general}</p>}
             <div>
               <label className="block text-sm font-medium mb-2" htmlFor="identifier">{isLoginModeAdmin ? t('mobileNumber') : t('email')}</label>
               <input
@@ -229,10 +236,13 @@ const LoginScreen: React.FC = () => {
                 type={isLoginModeAdmin ? 'tel' : 'email'}
                 value={loginIdentifier}
                 onChange={(e) => setLoginIdentifier(e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 ${loginError ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 ${loginErrors.identifier || loginErrors.general ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`}
                 placeholder={isLoginModeAdmin ? '9064201746' : 'you@example.com'}
                 required
+                aria-invalid={!!loginErrors.identifier}
+                aria-describedby="identifier-error"
               />
+              {loginErrors.identifier && <p id="identifier-error" className="text-danger text-xs mt-1">{loginErrors.identifier}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2" htmlFor="password">{t('password')}</label>
@@ -242,14 +252,17 @@ const LoginScreen: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 ${loginError ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 ${loginErrors.password || loginErrors.general ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`}
                   placeholder="••••••••"
                   required
+                  aria-invalid={!!loginErrors.password}
+                  aria-describedby="password-error"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center" aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
+               {loginErrors.password && <p id="password-error" className="text-danger text-xs mt-1">{loginErrors.password}</p>}
             </div>
             <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:shadow-lg hover:-translate-y-0.5 transform transition-all active:scale-95 disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-70 disabled:cursor-not-allowed">
               {isLoading ? t('loggingIn') : t('login')}
@@ -262,19 +275,19 @@ const LoginScreen: React.FC = () => {
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('firstName')}</label>
-                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className={getInputClass('firstName')} required />
+                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className={getSignUpInputClass('firstName')} required />
                     {signUpErrors.firstName && <p className="text-danger text-xs mt-1">{signUpErrors.firstName}</p>}
                 </div>
                 <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('lastName')}</label>
-                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className={getInputClass('lastName')} required />
+                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className={getSignUpInputClass('lastName')} required />
                     {signUpErrors.lastName && <p className="text-danger text-xs mt-1">{signUpErrors.lastName}</p>}
                 </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t('email')}</label>
               <div className="flex">
-                  <input type="email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} className={`${getInputClass('signUpEmail')} rounded-r-none`} required disabled={emailOtpSent}/>
+                  <input type="email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} className={`${getSignUpInputClass('signUpEmail')} rounded-r-none`} required disabled={emailOtpSent}/>
                   <button type="button" onClick={() => handleSendOtp('email')} disabled={emailOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400 transition-colors hover:bg-secondary-700">{emailOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
                {signUpErrors.signUpEmail && <p className="text-danger text-xs mt-1">{signUpErrors.signUpEmail}</p>}
@@ -291,7 +304,7 @@ const LoginScreen: React.FC = () => {
             <div>
               <label className="block text-sm font-medium mb-1">{t('mobileNumber')}</label>
                <div className="flex">
-                  <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="9876543210" className={`${getInputClass('mobile')} rounded-r-none`} required disabled={mobileOtpSent}/>
+                  <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="9876543210" className={`${getSignUpInputClass('mobile')} rounded-r-none`} required disabled={mobileOtpSent}/>
                   <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400 transition-colors hover:bg-secondary-700">{mobileOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
                {signUpErrors.mobile && <p className="text-danger text-xs mt-1">{signUpErrors.mobile}</p>}
@@ -307,12 +320,12 @@ const LoginScreen: React.FC = () => {
             )}
             <div>
               <label className="block text-sm font-medium mb-1">{t('address')}</label>
-              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} className={getInputClass('address')} required placeholder={t('addressPlaceholder')} />
+              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2} className={getSignUpInputClass('address')} required placeholder={t('addressPlaceholder')} />
                {signUpErrors.address && <p className="text-danger text-xs mt-1">{signUpErrors.address}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="signUpPassword">{t('password')}</label>
-              <input id="signUpPassword" type="password" value={signUpPassword} onChange={handleSignUpPasswordChange} className={getInputClass('signUpPassword')} required />
+              <input id="signUpPassword" type="password" value={signUpPassword} onChange={handleSignUpPasswordChange} className={getSignUpInputClass('signUpPassword')} required />
                {signUpErrors.signUpPassword && <p className="text-danger text-xs mt-1">{signUpErrors.signUpPassword}</p>}
               <PasswordStrengthIndicator strength={passwordStrength} t={t} />
             </div>
@@ -330,7 +343,7 @@ const LoginScreen: React.FC = () => {
         )}
         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             {isLoginView ? t('noAccount') : t('hasAccount')}
-            <button onClick={() => { setIsLoginView(!isLoginView); setLoginError(''); }} className="font-semibold text-primary dark:text-primary-400 hover:underline ml-1">
+            <button onClick={() => { setIsLoginView(!isLoginView); clearLoginState(); }} className="font-semibold text-primary dark:text-primary-400 hover:underline ml-1">
                 {isLoginView ? t('signUp') : t('login')}
             </button>
         </div>

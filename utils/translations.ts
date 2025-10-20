@@ -50,6 +50,10 @@ export const translations: Record<string, Record<string, string>> = {
     termsAgreement: 'I agree to the',
     termsLink: 'Terms & Conditions',
     errorTermsRequired: 'You must accept the Terms & Conditions.',
+    errorUserNotFound: 'No account found with this email address.',
+    errorAdminNotFound: 'No admin account found with this mobile number.',
+    errorIncorrectPassword: 'The password you entered is incorrect.',
+    errorInvalidCredentials: 'Invalid credentials. Please try again.',
 
     // BottomNav
     dashboard: 'Dashboard',
@@ -341,6 +345,10 @@ export const translations: Record<string, Record<string, string>> = {
     faqA9: 'You can report a missed pickup directly in the app. Go to the \'Profile\' screen and tap on \'File New Complaint\'. Select \'Missed Pickup\' as the issue type and provide the date of the missed collection. Our team will investigate the issue promptly.',
     faqQ10: 'The collection truck came much earlier/later than usual. Why?',
     faqA10: 'Collection times can vary due to traffic, weather conditions, or changes in routing to improve efficiency. While we aim for consistency, please ensure your bins are out by 6 AM on your collection day to avoid a missed pickup.',
+    errorUserNotFound: 'এই ইমেল ঠিকানা দিয়ে কোন একাউন্ট পাওয়া যায়নি।',
+    errorAdminNotFound: 'এই মোবাইল নম্বর দিয়ে কোন অ্যাডমিন একাউন্ট পাওয়া যায়নি।',
+    errorIncorrectPassword: 'আপনার দেওয়া পাসওয়ার্ডটি ভুল।',
+    errorInvalidCredentials: 'অবৈধ শংসাপত্র। আবার চেষ্টা করুন.',
   },
   hi: { // Hindi
     welcome: 'स्वागत है',
@@ -383,5 +391,9 @@ export const translations: Record<string, Record<string, string>> = {
     faqA9: 'You can report a missed pickup directly in the app. Go to the \'Profile\' screen and tap on \'File New Complaint\'. Select \'Missed Pickup\' as the issue type and provide the date of the missed collection. Our team will investigate the issue promptly.',
     faqQ10: 'The collection truck came much earlier/later than usual. Why?',
     faqA10: 'Collection times can vary due to traffic, weather conditions, or changes in routing to improve efficiency. While we aim for consistency, please ensure your bins are out by 6 AM on your collection day to avoid a missed pickup.',
+    errorUserNotFound: 'इस ईमेल पते से कोई खाता नहीं मिला।',
+    errorAdminNotFound: 'इस मोबाइल नंबर से कोई व्यवस्थापक खाता नहीं मिला।',
+    errorIncorrectPassword: 'आपके द्वारा दर्ज किया गया पासवर्ड गलत है।',
+    errorInvalidCredentials: 'अमान्य क्रेडेंशियल। कृपया पुन: प्रयास करें।',
   }
 };
