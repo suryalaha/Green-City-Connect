@@ -29,8 +29,8 @@ const PasswordStrengthIndicator: React.FC<{
 
     const strengthLevels = {
         weak: { label: t('passwordStrengthWeak'), color: 'bg-red-500', width: 'w-1/3' },
-        medium: { label: t('passwordStrengthMedium'), color: 'bg-yellow-500', width: 'w-2/3' },
-        strong: { label: t('passwordStrengthStrong'), color: 'bg-green-500', width: 'w-full' },
+        medium: { label: t('passwordStrengthMedium'), color: 'bg-amber-500', width: 'w-2/3' },
+        strong: { label: t('passwordStrengthStrong'), color: 'bg-primary', width: 'w-full' },
     };
 
     const currentLevel = strengthLevels[strength];
@@ -41,8 +41,8 @@ const PasswordStrengthIndicator: React.FC<{
                 <p className="text-xs font-medium">{t('passwordStrength')}:</p>
                 <p className={`text-xs font-bold ${currentLevel.color.replace('bg-', 'text-')}`}>{currentLevel.label}</p>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                <div className={`h-1.5 rounded-full ${currentLevel.color} ${currentLevel.width} transition-all duration-300`}></div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className={`h-2 rounded-full ${currentLevel.color} ${currentLevel.width} transition-all duration-300`}></div>
             </div>
         </div>
     );
@@ -115,7 +115,7 @@ const LoginScreen: React.FC = () => {
       }
 
       if (!isEmailVerified) errors.emailOtp = t('errorVerifyEmail');
-      if (!isMobileVerified) errors.mobileOtp = t('errorVerifyMobile');
+      if (!isMobileVerified) errors.mobile = t('errorVerifyMobile');
       if (!termsAccepted) errors.terms = t('errorTermsRequired');
 
       setSignUpErrors(errors);
@@ -234,42 +234,44 @@ const LoginScreen: React.FC = () => {
   };
   
   const getInputClass = (fieldName: string) => {
-    return `w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 ${signUpErrors[fieldName] ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`;
+    return `w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 focus:outline-none focus:ring-2 ${signUpErrors[fieldName] ? 'border-danger focus:ring-danger' : 'focus:ring-primary border-gray-300 dark:border-slate-600'}`;
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background dark:bg-dark-background p-4">
-      <Card className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center mb-6 text-primary dark:text-dark-primary">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-background dark:from-primary-dark/10 dark:via-dark-background dark:to-dark-background p-4">
+      <Card className="w-full max-w-md hover:scale-100 hover:shadow-soft-lg">
+        <h1 className="text-4xl font-bold text-center mb-2 text-primary dark:text-primary-light">
           Green City Connect
         </h1>
+        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">{isLoginView ? 'Welcome back! Please log in.' : 'Create an account to get started.'}</p>
+        
         {isLoginView ? (
-          <form onSubmit={handleLogin} noValidate>
-            {loginError && <p className="text-red-500 text-sm text-center mb-4">{loginError}</p>}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1" htmlFor="email">{t('email')}</label>
+          <form onSubmit={handleLogin} noValidate className="space-y-6">
+            {loginError && <p className="text-danger text-sm text-center -mt-2 mb-4">{loginError}</p>}
+            <div>
+              <label className="block text-sm font-medium mb-2" htmlFor="email">{t('email')}</label>
               <input
                 id="email"
                 type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ${loginEmailError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 dark:bg-slate-700 ${loginEmailError ? 'border-danger focus:ring-danger' : 'focus:ring-primary border-gray-300 dark:border-slate-600'}`}
                 placeholder="you@example.com"
                 required
                 aria-invalid={!!loginEmailError}
                 aria-describedby="email-error"
               />
-              {loginEmailError && <p id="email-error" className="text-red-500 text-xs mt-1">{loginEmailError}</p>}
+              {loginEmailError && <p id="email-error" className="text-danger text-xs mt-1">{loginEmailError}</p>}
             </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-1" htmlFor="password">{t('password')}</label>
+            <div>
+              <label className="block text-sm font-medium mb-2" htmlFor="password">{t('password')}</label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 dark:bg-gray-700 dark:border-gray-600 ${loginPasswordError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-primary border-gray-300 dark:border-gray-600'}`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 dark:bg-slate-700 ${loginPasswordError ? 'border-danger focus:ring-danger' : 'focus:ring-primary border-gray-300 dark:border-slate-600'}`}
                   placeholder="••••••••"
                   required
                   aria-invalid={!!loginPasswordError}
@@ -284,28 +286,28 @@ const LoginScreen: React.FC = () => {
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-              {loginPasswordError && <p id="password-error" className="text-red-500 text-xs mt-1">{loginPasswordError}</p>}
+              {loginPasswordError && <p id="password-error" className="text-danger text-xs mt-1">{loginPasswordError}</p>}
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors disabled:bg-gray-400"
+              className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-all transform active:scale-95 disabled:bg-gray-400 disabled:opacity-70"
             >
               {isLoading ? 'Logging in...' : t('login')}
             </button>
           </form>
         ) : (
           <form onSubmit={handleSignUp} noValidate className="space-y-4">
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('firstName')}</label>
                     <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className={getInputClass('firstName')} required />
-                    {signUpErrors.firstName && <p className="text-red-500 text-xs mt-1">{signUpErrors.firstName}</p>}
+                    {signUpErrors.firstName && <p className="text-danger text-xs mt-1">{signUpErrors.firstName}</p>}
                 </div>
                 <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('lastName')}</label>
                     <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className={getInputClass('lastName')} required />
-                    {signUpErrors.lastName && <p className="text-red-500 text-xs mt-1">{signUpErrors.lastName}</p>}
+                    {signUpErrors.lastName && <p className="text-danger text-xs mt-1">{signUpErrors.lastName}</p>}
                 </div>
             </div>
 
@@ -313,16 +315,16 @@ const LoginScreen: React.FC = () => {
               <label className="block text-sm font-medium mb-1">{t('email')}</label>
               <div className="flex">
                   <input type="email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} className={`${getInputClass('signUpEmail')} rounded-r-none`} required disabled={emailOtpSent}/>
-                  <button type="button" onClick={() => handleSendOtp('email')} disabled={emailOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm disabled:bg-gray-400">{emailOtpSent ? t('sent') : t('sendOtp')}</button>
+                  <button type="button" onClick={() => handleSendOtp('email')} disabled={emailOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400">{emailOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
-               {signUpErrors.signUpEmail && <p className="text-red-500 text-xs mt-1">{signUpErrors.signUpEmail}</p>}
+               {signUpErrors.signUpEmail && <p className="text-danger text-xs mt-1">{signUpErrors.signUpEmail}</p>}
             </div>
             {emailOtpSent && !isEmailVerified && (
               <div>
                   <label className="block text-sm font-medium mb-1">{t('emailOtp')}</label>
                    <div className="flex">
-                      <input type="text" value={emailOtp} onChange={e => setEmailOtp(e.target.value)} className="w-full p-2 border rounded-l-md dark:bg-gray-700 dark:border-gray-600" maxLength={6} />
-                      <button type="button" onClick={() => handleVerifyOtp('email')} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm">{t('verify')}</button>
+                      <input type="text" value={emailOtp} onChange={e => setEmailOtp(e.target.value)} className="w-full p-3 border rounded-l-lg dark:bg-slate-700 dark:border-slate-600" maxLength={6} />
+                      <button type="button" onClick={() => handleVerifyOtp('email')} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm">{t('verify')}</button>
                   </div>
               </div>
             )}
@@ -331,16 +333,16 @@ const LoginScreen: React.FC = () => {
               <label className="block text-sm font-medium mb-1">{t('mobileNumber')}</label>
                <div className="flex">
                   <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+91" className={`${getInputClass('mobile')} rounded-r-none`} required disabled={mobileOtpSent}/>
-                  <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm disabled:bg-gray-400">{mobileOtpSent ? t('sent') : t('sendOtp')}</button>
+                  <button type="button" onClick={() => handleSendOtp('mobile')} disabled={mobileOtpSent} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm disabled:bg-gray-400">{mobileOtpSent ? t('sent') : t('sendOtp')}</button>
               </div>
-               {signUpErrors.mobile && <p className="text-red-500 text-xs mt-1">{signUpErrors.mobile}</p>}
+               {signUpErrors.mobile && <p className="text-danger text-xs mt-1">{signUpErrors.mobile}</p>}
             </div>
              {mobileOtpSent && !isMobileVerified && (
               <div>
                   <label className="block text-sm font-medium mb-1">{t('mobileOtp')}</label>
                    <div className="flex">
-                      <input type="text" value={mobileOtp} onChange={e => setMobileOtp(e.target.value)} className="w-full p-2 border rounded-l-md dark:bg-gray-700 dark:border-gray-600" maxLength={6}/>
-                      <button type="button" onClick={() => handleVerifyOtp('mobile')} className="px-4 py-2 bg-secondary text-white rounded-r-md text-sm">{t('verify')}</button>
+                      <input type="text" value={mobileOtp} onChange={e => setMobileOtp(e.target.value)} className="w-full p-3 border rounded-l-lg dark:bg-slate-700 dark:border-slate-600" maxLength={6}/>
+                      <button type="button" onClick={() => handleVerifyOtp('mobile')} className="px-4 py-2 bg-secondary text-white rounded-r-lg text-sm">{t('verify')}</button>
                   </div>
               </div>
             )}
@@ -355,7 +357,7 @@ const LoginScreen: React.FC = () => {
                 required 
                 placeholder={t('addressPlaceholder')}
               />
-               {signUpErrors.address && <p className="text-red-500 text-xs mt-1">{signUpErrors.address}</p>}
+               {signUpErrors.address && <p className="text-danger text-xs mt-1">{signUpErrors.address}</p>}
             </div>
 
             <div>
@@ -368,7 +370,7 @@ const LoginScreen: React.FC = () => {
                 className={getInputClass('signUpPassword')}
                 required 
               />
-               {signUpErrors.signUpPassword && <p className="text-red-500 text-xs mt-1">{signUpErrors.signUpPassword}</p>}
+               {signUpErrors.signUpPassword && <p className="text-danger text-xs mt-1">{signUpErrors.signUpPassword}</p>}
               <PasswordStrengthIndicator strength={passwordStrength} t={t} />
             </div>
             
@@ -379,31 +381,31 @@ const LoginScreen: React.FC = () => {
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded mt-0.5 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-dark-primary"
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded mt-0.5 dark:bg-slate-700 dark:border-slate-600 dark:checked:bg-primary"
                   aria-describedby="terms-error"
                 />
                 <label htmlFor="terms" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                   {t('termsAgreement')}{' '}
-                  <a href="#" onClick={(e) => e.preventDefault()} className="font-medium text-primary dark:text-dark-primary hover:underline">
+                  <a href="#" onClick={(e) => e.preventDefault()} className="font-medium text-primary dark:text-primary-light hover:underline">
                     {t('termsLink')}
                   </a>
                 </label>
               </div>
-              {signUpErrors.terms && <p id="terms-error" className="text-red-500 text-xs mt-1 ml-6">{signUpErrors.terms}</p>}
+              {signUpErrors.terms && <p id="terms-error" className="text-danger text-xs mt-1 ml-6">{signUpErrors.terms}</p>}
             </div>
 
             <button
               type="submit"
               disabled={!isFormValid || isLoading}
-              className="w-full bg-primary dark:bg-dark-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors disabled:bg-gray-400"
+              className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-all transform active:scale-95 disabled:bg-gray-400 disabled:opacity-70"
             >
               {isLoading ? 'Signing up...' : t('signUp')}
             </button>
           </form>
         )}
-        <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             {isLoginView ? t('noAccount') : t('hasAccount')}
-            <button onClick={() => setIsLoginView(!isLoginView)} className="font-medium text-primary dark:text-dark-primary hover:underline ml-1">
+            <button onClick={() => setIsLoginView(!isLoginView)} className="font-semibold text-primary dark:text-primary-light hover:underline ml-1">
                 {isLoginView ? t('signUp') : t('login')}
             </button>
         </div>

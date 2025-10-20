@@ -15,12 +15,14 @@ const NavItem: React.FC<NavItemProps> = ({ label, screen, icon }) => {
   return (
     <button
       onClick={() => setCurrentScreen(screen)}
-      className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors ${
-        isActive ? 'text-primary dark:text-dark-primary' : 'text-gray-500 dark:text-gray-400'
+      className={`flex flex-col items-center justify-center w-full h-full transition-colors relative ${
+        isActive ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400 hover:text-primary'
       }`}
     >
-      {icon}
-      <span className="text-xs mt-1">{label}</span>
+      <div className={`flex items-center justify-center w-16 h-8 rounded-full transition-all duration-300 ${isActive ? 'bg-primary/10 dark:bg-primary/20' : ''}`}>
+        {icon}
+      </div>
+      <span className={`text-xs mt-1 transition-all ${isActive ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
   );
 };
@@ -37,7 +39,7 @@ const BottomNav: React.FC = () => {
     ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 flex justify-around shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 h-20 bg-card dark:bg-dark-card border-t border-gray-200 dark:border-gray-800 flex justify-around shadow-soft-lg">
       {navItems.map(item => (
         <NavItem key={item.screen} {...item} />
       ))}

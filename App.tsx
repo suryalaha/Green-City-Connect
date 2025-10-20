@@ -46,14 +46,14 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen font-sans bg-background dark:bg-dark-background text-text dark:text-dark-text">
-      <main className="flex-grow overflow-y-auto pb-20 p-4">
+    <div className="flex flex-col h-screen font-sans bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground">
+      <main className="flex-grow overflow-y-auto pb-24 p-4 md:p-6 animate-fade-in-up">
         {renderScreen()}
       </main>
       <div className="fixed bottom-24 right-4 z-50">
         <button
           onClick={() => setIsChatbotOpen(true)}
-          className="bg-primary dark:bg-dark-primary text-white rounded-full p-4 shadow-lg hover:bg-primary-dark transition-colors"
+          className="bg-primary text-white rounded-full p-4 shadow-lg hover:bg-primary-dark transition-all transform hover:scale-110"
           aria-label="Toggle Chatbot"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
