@@ -49,7 +49,7 @@ export interface SubscriptionPlan {
 export interface UserSubscription {
   planId: string;
   status: 'active' | 'paused' | 'cancelled';
-  nextRenewalDate: string;
+  nextRenewalDate?: string;
 }
 
 export interface Message {

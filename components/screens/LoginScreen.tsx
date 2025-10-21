@@ -50,14 +50,17 @@ const PasswordStrengthIndicator: React.FC<{
 
 
 const LoginScreen: React.FC = () => {
-  const { login, signup, adminLogin } = useAppContext();
+  const { login, signup, adminLogin, resetPassword } = useAppContext();
   const { t } = useTranslations();
   
-  const [isLoginView, setIsLoginView] = useState(true);
-  const [isLoginModeAdmin, setIsLoginModeAdmin] = useState(false);
+  type ViewMode = 'login' | 'signup' | 'forgot_password' | 'reset_password';
+  const [viewMode, setViewMode] = useState<ViewMode>('login');
+
   const [isLoading, setIsLoading] = useState(false);
   
-  const [loginIdentifier, setLoginIdentifier] = useState(''); // Holds email or mobile
+  // Login State
+  const [isLoginModeAdmin, setIsLoginModeAdmin] = useState(false);
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginErrors, setLoginErrors] = useState<{ identifier?: string; password?: string; general?: string }>({});
@@ -79,6 +82,14 @@ const LoginScreen: React.FC = () => {
   const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [signUpErrors, setSignUpErrors] = useState<Record<string, string>>({});
   const [isFormValid, setIsFormValid] = useState(false);
+  
+  // Password Reset State
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [newPasswordStrength, setNewPasswordStrength] = useState<'none' | 'weak' | 'medium' | 'strong'>('none');
+  const [resetErrors, setResetErrors] = useState<Record<string, string>>({});
 
 
   const checkPasswordStrength = (password: string): 'none' | 'weak' | 'medium' | 'strong' => {
@@ -113,8 +124,8 @@ const LoginScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!isLoginView) validateSignUp();
-  }, [firstName, lastName, signUpEmail, mobile, address, signUpPassword, isEmailVerified, isMobileVerified, termsAccepted, isLoginView]);
+    if (viewMode === 'signup') validateSignUp();
+  }, [firstName, lastName, signUpEmail, mobile, address, signUpPassword, isEmailVerified, isMobileVerified, termsAccepted, viewMode]);
 
 
   const validateLogin = () => {
@@ -215,31 +226,71 @@ const LoginScreen: React.FC = () => {
       setPasswordStrength(checkPasswordStrength(newPassword));
   };
   
+  const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newPassword = e.target.value;
+      setNewPassword(newPassword);
+      setNewPasswordStrength(checkPasswordStrength(newPassword));
+  };
+
+  const handleSendResetCode = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
+          setResetErrors({ email: t('errorInvalidEmail') });
+          return;
+      }
+      setResetErrors({});
+      // In a real app, you would call an API here.
+      alert(t('resetCodeSent'));
+      setViewMode('reset_password');
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const MOCK_RESET_CODE = "987654";
+      const errors: Record<string, string> = {};
+      if (resetCode !== MOCK_RESET_CODE) errors.code = t('errorInvalidResetCode');
+      if (newPassword !== confirmNewPassword) errors.confirmPassword = t('errorPasswordsDoNotMatch');
+      const strength = checkPasswordStrength(newPassword);
+      if (strength === 'weak' || strength === 'none') errors.newPassword = t('errorPasswordWeak');
+
+      if (Object.keys(errors).length > 0) {
+          setResetErrors(errors);
+          return;
+      }
+
+      setResetErrors({});
+      setIsLoading(true);
+      try {
+          await resetPassword(resetEmail, newPassword);
+          alert(t('passwordResetSuccess'));
+          setViewMode('login');
+          // Clear reset fields
+          setResetEmail('');
+          setResetCode('');
+          setNewPassword('');
+          setConfirmNewPassword('');
+      } catch (error) {
+          const errorMessageKey = (error as Error).message;
+          setResetErrors({ email: t(errorMessageKey) || t('errorEmailNotFound') });
+      } finally {
+          setIsLoading(false);
+      }
+  };
+  
   const getSignUpInputClass = (fieldName: string) => `w-full p-3 border rounded-lg bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 transition-colors focus:outline-none focus:ring-2 ${signUpErrors[fieldName] ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`;
   
-  const clearLoginState = () => {
+  const clearState = () => {
     setLoginIdentifier('');
     setLoginPassword('');
     setLoginErrors({});
+    setResetEmail('');
+    setResetErrors({});
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-100 via-white to-secondary-100 dark:from-primary-900/20 dark:via-dark-background dark:to-secondary-900/20 p-4">
-      <Card className="w-full max-w-md hover:-translate-y-0">
-        <h1 className="text-4xl font-extrabold text-center mb-2 bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text">Green City Connect</h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-6">{isLoginView ? 'Welcome! Please log in.' : 'Create an account to get started.'}</p>
-        
-        {isLoginView && (
-            <div className="flex justify-center mb-6">
-                <div className="relative flex p-1 bg-gray-200 dark:bg-gray-700 rounded-full">
-                    <button onClick={() => { setIsLoginModeAdmin(false); clearLoginState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${!isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('user')}</button>
-                    <button onClick={() => { setIsLoginModeAdmin(true); clearLoginState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('admin')}</button>
-                    <span className={`absolute top-1 left-1 h-8 w-24 rounded-full bg-gradient-to-r from-primary to-secondary shadow-md transform transition-transform ${isLoginModeAdmin ? 'translate-x-full' : ''}`}></span>
-                </div>
-            </div>
-        )}
-        
-        {isLoginView ? (
+  const renderContent = () => {
+    switch (viewMode) {
+      case 'login':
+        return (
           <form onSubmit={handleLogin} noValidate className="space-y-4">
             {loginErrors.general && <p className="text-danger text-sm text-center -mt-2 mb-2">{loginErrors.general}</p>}
             <div>
@@ -258,7 +309,10 @@ const LoginScreen: React.FC = () => {
               {loginErrors.identifier && <p id="identifier-error" className="text-danger text-xs mt-1">{loginErrors.identifier}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2" htmlFor="password">{t('password')}</label>
+                <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium" htmlFor="password">{t('password')}</label>
+                    <button type="button" onClick={() => setViewMode('forgot_password')} className="text-sm font-medium text-primary dark:text-primary-400 hover:underline">{t('forgotPassword')}</button>
+                </div>
               <div className="relative">
                 <input
                   id="password"
@@ -281,10 +335,10 @@ const LoginScreen: React.FC = () => {
               {isLoading ? t('loggingIn') : t('login')}
             </button>
           </form>
-        ) : (
-          // SIGN UP FORM
+        );
+      case 'signup':
+        return (
           <form onSubmit={handleSignUp} noValidate className="space-y-4">
-            {/* Sign-up fields... */}
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <div className="flex-1">
                     <label className="block text-sm font-medium mb-1">{t('firstName')}</label>
@@ -353,12 +407,110 @@ const LoginScreen: React.FC = () => {
               {isLoading ? t('signingUp') : t('signUp')}
             </button>
           </form>
-        )}
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            {isLoginView ? t('noAccount') : t('hasAccount')}
-            <button onClick={() => { setIsLoginView(!isLoginView); clearLoginState(); }} className="font-semibold text-primary dark:text-primary-400 hover:underline ml-1">
-                {isLoginView ? t('signUp') : t('login')}
+        );
+      case 'forgot_password':
+        return (
+          <form onSubmit={handleSendResetCode} noValidate className="space-y-4">
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 -mt-4">{t('enterResetEmailPrompt')}</p>
+            {resetErrors.email && <p className="text-danger text-sm text-center">{resetErrors.email}</p>}
+            <div>
+              <label className="block text-sm font-medium mb-2" htmlFor="reset-email">{t('email')}</label>
+              <input
+                id="reset-email"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-slate-100 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 ${resetErrors.email ? 'border-danger focus:ring-danger/50' : 'focus:ring-primary/50 border-slate-200 dark:border-slate-700 focus:border-primary'}`}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+            <button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:shadow-lg">
+              {t('sendResetCode')}
             </button>
+          </form>
+        );
+      case 'reset_password':
+        return (
+          <form onSubmit={handleResetPassword} noValidate className="space-y-4">
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 -mt-4">{t('enterResetCodePrompt')}</p>
+            {resetErrors.general && <p className="text-danger text-sm text-center">{resetErrors.general}</p>}
+             <div>
+                <label className="block text-sm font-medium mb-1">{t('resetCode')}</label>
+                <input type="text" value={resetCode} onChange={e => setResetCode(e.target.value)} className={`w-full p-3 border rounded-lg dark:bg-slate-800 ${resetErrors.code ? 'border-danger' : 'border-slate-200 dark:border-slate-700'}`} maxLength={6} required />
+                {resetErrors.code && <p className="text-danger text-xs mt-1">{resetErrors.code}</p>}
+            </div>
+             <div>
+                <label className="block text-sm font-medium mb-1">{t('newPassword')}</label>
+                <input type="password" value={newPassword} onChange={handleNewPasswordChange} className={`w-full p-3 border rounded-lg dark:bg-slate-800 ${resetErrors.newPassword ? 'border-danger' : 'border-slate-200 dark:border-slate-700'}`} required />
+                {resetErrors.newPassword && <p className="text-danger text-xs mt-1">{resetErrors.newPassword}</p>}
+                <PasswordStrengthIndicator strength={newPasswordStrength} t={t} />
+            </div>
+             <div>
+                <label className="block text-sm font-medium mb-1">{t('confirmNewPassword')}</label>
+                <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className={`w-full p-3 border rounded-lg dark:bg-slate-800 ${resetErrors.confirmPassword ? 'border-danger' : 'border-slate-200 dark:border-slate-700'}`} required />
+                {resetErrors.confirmPassword && <p className="text-danger text-xs mt-1">{resetErrors.confirmPassword}</p>}
+            </div>
+            <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:shadow-lg disabled:opacity-70">
+              {isLoading ? t('resettingPassword') : t('resetPassword')}
+            </button>
+          </form>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getTitle = () => {
+    switch(viewMode) {
+      case 'login': return 'Welcome! Please log in.';
+      case 'signup': return 'Create an account to get started.';
+      case 'forgot_password':
+      case 'reset_password': return t('resetPassword');
+      default: return '';
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-100 via-white to-secondary-100 dark:from-primary-900/20 dark:via-dark-background dark:to-secondary-900/20 p-4">
+      <Card className="w-full max-w-md hover:-translate-y-0">
+        <h1 className="text-4xl font-extrabold text-center mb-2 bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text">Green City Connect</h1>
+        <p className="text-center text-gray-500 dark:text-gray-400 mb-6">{getTitle()}</p>
+        
+        {viewMode === 'login' && (
+            <div className="flex justify-center mb-6">
+                <div className="relative flex p-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+                    <button onClick={() => { setIsLoginModeAdmin(false); clearState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${!isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('user')}</button>
+                    <button onClick={() => { setIsLoginModeAdmin(true); clearState(); }} className={`relative z-10 w-24 py-1.5 rounded-full text-sm font-semibold transition-colors ${isLoginModeAdmin ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{t('admin')}</button>
+                    <span className={`absolute top-1 left-1 h-8 w-24 rounded-full bg-gradient-to-r from-primary to-secondary shadow-md transform transition-transform ${isLoginModeAdmin ? 'translate-x-full' : ''}`}></span>
+                </div>
+            </div>
+        )}
+        
+        {renderContent()}
+
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            {viewMode === 'login' && (
+                <>
+                    {t('noAccount')}
+                    <button onClick={() => { setViewMode('signup'); clearState(); }} className="font-semibold text-primary dark:text-primary-400 hover:underline ml-1">
+                        {t('signUp')}
+                    </button>
+                </>
+            )}
+            {viewMode === 'signup' && (
+                <>
+                    {t('hasAccount')}
+                     <button onClick={() => { setViewMode('login'); clearState(); }} className="font-semibold text-primary dark:text-primary-400 hover:underline ml-1">
+                        {t('login')}
+                    </button>
+                </>
+            )}
+            {(viewMode === 'forgot_password' || viewMode === 'reset_password') && (
+                 <button onClick={() => { setViewMode('login'); clearState(); }} className="font-semibold text-primary dark:text-primary-400 hover:underline">
+                    {t('backToLogin')}
+                </button>
+            )}
         </div>
       </Card>
     </div>

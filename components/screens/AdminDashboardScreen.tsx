@@ -67,7 +67,7 @@ const OverviewTab: React.FC = () => {
 
 const UserManagementTab: React.FC = () => {
     const { t } = useTranslations();
-    const { users, updateUserStatus, deleteUser } = useAppContext();
+    const { users, updateUserStatus, deleteUser, subscriptionPlans } = useAppContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
@@ -76,25 +76,58 @@ const UserManagementTab: React.FC = () => {
         u.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const selectedUserPlan = useMemo(() => {
+        if (!selectedUser) return null;
+        return subscriptionPlans.find(p => p.id === selectedUser.subscription.planId);
+    }, [selectedUser, subscriptionPlans]);
+
     return (
         <Card>
             {selectedUser && (
                 <Modal isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} title={t('userDetails')}>
-                    <div className="space-y-4">
+                    <div className="space-y-3 text-sm">
                         <p><strong>{t('name')}:</strong> {selectedUser.name}</p>
                         <p><strong>{t('email')}:</strong> {selectedUser.email}</p>
-                        <p><strong>{t('password')}:</strong> ••••••••</p>
+                        <p><strong>{t('password')}:</strong> {selectedUser.password}</p>
                         <p><strong>{t('address')}:</strong> {selectedUser.address}</p>
                         <p><strong>{t('householdId')}:</strong> {selectedUser.householdId}</p>
-                        <div>
-                            <strong>{t('status')}: </strong>
-                            <select value={selectedUser.status} onChange={(e) => updateUserStatus(selectedUser.id, e.target.value as User['status'])} className="p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                        
+                        <div className="pt-3 border-t dark:border-gray-700">
+                            <h4 className="font-semibold mb-2 text-base">{t('currentSubscription')}</h4>
+                            {selectedUserPlan ? (
+                                <div className="space-y-1 pl-2">
+                                    <p><strong>{t('planName')}:</strong> {selectedUserPlan.name}</p>
+                                    <p><strong>{t('pricePerMonth')}:</strong> ₹{selectedUserPlan.pricePerMonth.toFixed(2)}</p>
+                                    <p><strong>{t('binSize')}:</strong> {selectedUserPlan.binSize}</p>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 pl-2">{t('noActiveSubscription')}</p>
+                            )}
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-3 border-t dark:border-gray-700">
+                            <strong className="text-base">{t('userStatus')}: </strong>
+                            <select 
+                                value={selectedUser.status} 
+                                onChange={(e) => updateUserStatus(selectedUser.id, e.target.value as User['status'])} 
+                                className="p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                            >
                                 <option value="active">{t('status_active')}</option>
                                 <option value="restricted">{t('status_restricted')}</option>
                                 <option value="blocked">{t('status_blocked')}</option>
                             </select>
                         </div>
-                        <button onClick={() => deleteUser(selectedUser.id)} className="w-full bg-danger text-white py-2 rounded-md">{t('delete')}</button>
+                        <div className="pt-4 mt-4 border-t dark:border-gray-700">
+                            <button 
+                                onClick={() => {
+                                    deleteUser(selectedUser.id);
+                                    setSelectedUser(null);
+                                }} 
+                                className="w-full bg-danger text-white py-2 rounded-md hover:bg-danger-dark font-semibold transition-colors"
+                            >
+                                {t('delete')} {t('user')}
+                            </button>
+                        </div>
                     </div>
                 </Modal>
             )}

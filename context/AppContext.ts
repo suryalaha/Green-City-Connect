@@ -55,6 +55,7 @@ interface AppContextType {
   sendAdminMessage: (userId: string, text: string) => void;
   getUnreadMessageCount: (userId: string) => number;
   markMessagesAsRead: (userId: string) => void;
+  resetPassword: (email: string, newPassword: string) => Promise<void>;
   // Admin functions
   updateUserStatus: (userId: string, status: User['status']) => void;
   deleteUser: (userId: string) => void;
@@ -332,6 +333,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const markMessagesAsRead = (userId: string) => {
     setAdminMessages(prev => prev.map(msg => msg.userId === userId ? { ...msg, read: true } : msg));
   };
+
+  const resetPassword = (email: string, newPassword: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        setUsers(prevUsers => {
+            const userIndex = prevUsers.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+            if (userIndex === -1) {
+                reject(new Error('errorEmailNotFound'));
+                return prevUsers;
+            }
+            const updatedUsers = [...prevUsers];
+            updatedUsers[userIndex] = { ...updatedUsers[userIndex], password: newPassword };
+            resolve();
+            return updatedUsers;
+        });
+    });
+  };
   
   // --- Admin Functions ---
   const updateUserStatus = (userId: string, status: User['status']) => {
@@ -413,6 +430,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sendAdminMessage,
     getUnreadMessageCount,
     markMessagesAsRead,
+    resetPassword,
     // Admin
     updateUserStatus,
     deleteUser,
