@@ -10,13 +10,6 @@ import { Screen } from '../App';
 type Language = 'en' | 'bn' | 'hi'; // Can be extended with more languages
 type Theme = 'light' | 'dark';
 
-const MOCK_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-    { id: 'plan_basic', name: 'Basic Household', pricePerMonth: 75.00, binSize: 'Small (60L)', frequency: 'Weekly' },
-    { id: 'plan_standard', name: 'Standard Family', pricePerMonth: 120.00, binSize: 'Medium (120L)', frequency: 'Weekly' },
-    { id: 'plan_large', name: 'Large Household', pricePerMonth: 180.00, binSize: 'Large (240L)', frequency: 'Weekly' },
-    { id: 'plan_biweekly', name: 'Bi-Weekly Saver', pricePerMonth: 45.00, binSize: 'Small (60L)', frequency: 'Bi-Weekly' },
-];
-
 const getNextRenewalDate = () => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString();
@@ -68,6 +61,9 @@ interface AppContextType {
   updatePaymentStatus: (paymentId: string, status: Payment['status']) => void;
   updateBooking: (bookingId: string, updatedBooking: Partial<Booking>) => void;
   updateComplaint: (complaintId: string, updatedComplaint: Partial<Complaint>) => void;
+  addSubscriptionPlan: (planData: Omit<SubscriptionPlan, 'id'>) => void;
+  updateSubscriptionPlan: (plan: SubscriptionPlan) => void;
+  deleteSubscriptionPlan: (planId: string) => void;
 }
 
 const AppContext = React.createContext<AppContextType | undefined>(undefined);
@@ -104,6 +100,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [adminMessages, setAdminMessages] = usePersistedState<AdminMessage[]>('adminMessages', []);
   const [announcements, setAnnouncements] = usePersistedState<Announcement[]>('announcements', [
     { id: 'anno1', title: 'Holiday Schedule Update', content: 'Please note that waste collection will be postponed by one day during the upcoming national holiday week.', timestamp: Date.now() - 86400000 * 2 }
+  ]);
+  const [subscriptionPlans, setSubscriptionPlans] = usePersistedState<SubscriptionPlan[]>('subscriptionPlans', [
+    { id: 'plan_basic', name: 'Basic Household', pricePerMonth: 75.00, binSize: 'Small (60L)', frequency: 'Weekly' },
+    { id: 'plan_standard', name: 'Standard Family', pricePerMonth: 120.00, binSize: 'Medium (120L)', frequency: 'Weekly' },
+    { id: 'plan_large', name: 'Large Household', pricePerMonth: 180.00, binSize: 'Large (240L)', frequency: 'Weekly' },
+    { id: 'plan_biweekly', name: 'Bi-Weekly Saver', pricePerMonth: 45.00, binSize: 'Small (60L)', frequency: 'Bi-Weekly' },
   ]);
   
   React.useEffect(() => {
@@ -167,7 +169,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (storedPicture) userToLogin.profilePicture = storedPicture;
         
         setLoggedInUser(userToLogin);
-        const userPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === userToLogin.subscription.planId);
+        const userPlan = subscriptionPlans.find(p => p.id === userToLogin.subscription.planId);
         setOutstandingBalance(userPlan?.pricePerMonth || 75.00);
         resolve();
       } else {
@@ -297,8 +299,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!loggedInUser || loggedInUser.role !== 'user') return reject(new Error("User not found"));
         const user = loggedInUser as User;
 
-        const currentPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === user.subscription.planId);
-        const newPlan = MOCK_SUBSCRIPTION_PLANS.find(p => p.id === newPlanId);
+        const currentPlan = subscriptionPlans.find(p => p.id === user.subscription.planId);
+        const newPlan = subscriptionPlans.find(p => p.id === newPlanId);
         if (!currentPlan || !newPlan) return reject(new Error("Invalid plan selected"));
 
         const priceDifference = newPlan.pricePerMonth - currentPlan.pricePerMonth;
@@ -362,6 +364,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, ...updatedComplaint } : c));
   };
 
+  const addSubscriptionPlan = (planData: Omit<SubscriptionPlan, 'id'>) => {
+    const newPlan: SubscriptionPlan = { ...planData, id: `plan_${Date.now()}` };
+    setSubscriptionPlans(prev => [...prev, newPlan]);
+  };
+  
+  const updateSubscriptionPlan = (updatedPlan: SubscriptionPlan) => {
+    setSubscriptionPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+  };
+  
+  const deleteSubscriptionPlan = (planId: string) => {
+    setSubscriptionPlans(prev => prev.filter(p => p.id !== planId));
+  };
+
 
   const value = {
     loggedInUser,
@@ -389,7 +404,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     payForBooking,
     currentScreen,
     setCurrentScreen,
-    subscriptionPlans: MOCK_SUBSCRIPTION_PLANS,
+    subscriptionPlans,
     updateSubscription,
     users,
     announcements,
@@ -404,6 +419,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updatePaymentStatus,
     updateBooking,
     updateComplaint,
+    addSubscriptionPlan,
+    updateSubscriptionPlan,
+    deleteSubscriptionPlan,
   };
 
   return React.createElement(AppContext.Provider, { value: value }, children);

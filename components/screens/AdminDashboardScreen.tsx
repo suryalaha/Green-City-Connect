@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import { useTranslations } from '../../hooks/useTranslations';
 import { useAppContext } from '../../context/AppContext';
-import { User, AdminMessage, Payment, Booking, Complaint } from '../../types';
+import { User, AdminMessage, Payment, Booking, Complaint, SubscriptionPlan } from '../../types';
 import Modal from '../ui/Modal';
 
-type AdminTab = 'overview' | 'users' | 'payments' | 'bookings' | 'complaints' | 'messaging';
+type AdminTab = 'overview' | 'users' | 'payments' | 'bookings' | 'complaints' | 'messaging' | 'subscriptions';
 
 const TabButton: React.FC<{
   label: string;
@@ -99,7 +99,31 @@ const UserManagementTab: React.FC = () => {
                 </Modal>
             )}
             <h2 className="text-2xl font-semibold mb-4">{t('userManagement')}</h2>
-            <input type="text" placeholder={t('searchUsers')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 mb-4" />
+            <div className="relative mb-4">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    placeholder={t('searchUsers')} 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    className="w-full p-2 pl-10 pr-10 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary" 
+                />
+                {searchTerm && (
+                    <button 
+                        onClick={() => setSearchTerm('')} 
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        aria-label="Clear search"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead><tr className="border-b dark:border-gray-700"><th className="p-2">{t('name')}</th><th className="p-2">{t('email')}</th><th className="p-2">{t('status')}</th><th className="p-2">{t('actions')}</th></tr></thead>
@@ -284,6 +308,151 @@ const CommunityMessagingTab: React.FC = () => {
     );
 };
 
+interface PlanEditorModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (planData: Omit<SubscriptionPlan, 'id'> | SubscriptionPlan) => void;
+    plan: SubscriptionPlan | null;
+}
+
+const PlanEditorModal: React.FC<PlanEditorModalProps> = ({ isOpen, onClose, onSave, plan }) => {
+    const { t } = useTranslations();
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+    const [binSize, setBinSize] = useState<SubscriptionPlan['binSize']>('Medium (120L)');
+    const [frequency, setFrequency] = useState<SubscriptionPlan['frequency']>('Weekly');
+
+    useEffect(() => {
+        if (isOpen) {
+            if (plan) {
+                setName(plan.name);
+                setPrice(plan.pricePerMonth.toString());
+                setBinSize(plan.binSize);
+                setFrequency(plan.frequency);
+            } else {
+                setName('');
+                setPrice('');
+                setBinSize('Medium (120L)');
+                setFrequency('Weekly');
+            }
+        }
+    }, [plan, isOpen]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const priceValue = parseFloat(price);
+        if (!name.trim() || isNaN(priceValue) || priceValue < 0) {
+            alert('Please fill all fields with valid values.');
+            return;
+        }
+
+        const planData = { name, pricePerMonth: priceValue, binSize, frequency };
+        if (plan) {
+            onSave({ ...planData, id: plan.id });
+        } else {
+            onSave(planData);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={plan ? t('editPlan') : t('addNewPlan')}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('planName')}</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('pricePerMonth')}</label>
+                    <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required step="0.01" min="0" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('binSize')}</label>
+                    <select value={binSize} onChange={e => setBinSize(e.target.value as SubscriptionPlan['binSize'])} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                        <option>Small (60L)</option>
+                        <option>Medium (120L)</option>
+                        <option>Large (240L)</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">{t('frequency')}</label>
+                    <select value={frequency} onChange={e => setFrequency(e.target.value as SubscriptionPlan['frequency'])} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                        <option>Weekly</option>
+                        <option>Bi-Weekly</option>
+                    </select>
+                </div>
+                <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark">{t('savePlan')}</button>
+            </form>
+        </Modal>
+    );
+};
+
+const SubscriptionManagementTab: React.FC = () => {
+    const { t } = useTranslations();
+    const { subscriptionPlans, users, addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan } = useAppContext();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
+
+    const handleOpenAddModal = () => {
+        setEditingPlan(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (plan: SubscriptionPlan) => {
+        setEditingPlan(plan);
+        setIsModalOpen(true);
+    };
+
+    const handleSavePlan = (planData: Omit<SubscriptionPlan, 'id'> | SubscriptionPlan) => {
+        if ('id' in planData) {
+            updateSubscriptionPlan(planData as SubscriptionPlan);
+        } else {
+            addSubscriptionPlan(planData);
+        }
+        setIsModalOpen(false);
+    };
+
+    const handleDeletePlan = (planId: string) => {
+        const usersOnPlan = users.filter(u => u.subscription.planId === planId).length;
+        let confirmationMessage = t('deletePlanConfirmation');
+        if (usersOnPlan > 0) {
+            confirmationMessage += `\n\n${t('deletePlanWarningUsers').replace('{count}', usersOnPlan.toString())}`;
+        }
+        if (window.confirm(confirmationMessage)) {
+            deleteSubscriptionPlan(planId);
+        }
+    };
+
+    return (
+        <Card>
+            <PlanEditorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePlan} plan={editingPlan} />
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">{t('subscriptionPlanManagement')}</h2>
+                <button onClick={handleOpenAddModal} className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark text-sm font-semibold">{t('addNewPlan')}</button>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead><tr className="border-b dark:border-gray-700"><th className="p-2">{t('planName')}</th><th className="p-2">{t('pricePerMonth')}</th><th className="p-2">{t('binSize')}</th><th className="p-2">{t('frequency')}</th><th className="p-2">{t('actions')}</th></tr></thead>
+                    <tbody>
+                        {subscriptionPlans.map(plan => (
+                            <tr key={plan.id} className="border-b dark:border-gray-700">
+                                <td className="p-2 font-medium">{plan.name}</td>
+                                <td className="p-2">₹{plan.pricePerMonth.toFixed(2)}</td>
+                                <td className="p-2">{plan.binSize}</td>
+                                <td className="p-2">{t(plan.frequency)}</td>
+                                <td className="p-2">
+                                    <div className="flex space-x-2">
+                                        <button onClick={() => handleOpenEditModal(plan)} className="text-secondary hover:underline text-sm font-semibold">{t('edit')}</button>
+                                        <button onClick={() => handleDeletePlan(plan.id)} className="text-danger hover:underline text-sm font-semibold">{t('delete')}</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
+    );
+};
 
 // --- MAIN COMPONENT ---
 
@@ -300,6 +469,7 @@ const AdminDashboardScreen: React.FC = () => {
             case 'bookings': return <BookingsManagementTab />;
             case 'complaints': return <ComplaintsManagementTab />;
             case 'messaging': return <CommunityMessagingTab />;
+            case 'subscriptions': return <SubscriptionManagementTab />;
             default: return null;
         }
     };
@@ -321,6 +491,7 @@ const AdminDashboardScreen: React.FC = () => {
                 <TabButton label={t('bookings')} isActive={activeTab === 'bookings'} onClick={() => setActiveTab('bookings')} />
                 <TabButton label={t('complaints')} isActive={activeTab === 'complaints'} onClick={() => setActiveTab('complaints')} />
                 <TabButton label={t('messaging')} isActive={activeTab === 'messaging'} onClick={() => setActiveTab('messaging')} />
+                 <TabButton label={t('subscriptions')} isActive={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
             </div>
 
             <div>{renderTabContent()}</div>
