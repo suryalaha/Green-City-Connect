@@ -20,6 +20,7 @@ const DashboardScreen: React.FC = () => {
     const { t } = useTranslations();
     const [lastLog, setLastLog] = useState<'wet' | 'dry' | 'mixed' | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [adState, setAdState] = useState<'idle' | 'watching' | 'watched'>('idle');
 
     const monthlyStats = useMemo(() => {
         const now = new Date();
@@ -39,12 +40,13 @@ const DashboardScreen: React.FC = () => {
         const dryLogsThisMonth = logsThisMonth.filter(log => log.type === 'dry').length;
         const recyclingRate = totalLogsThisMonth > 0 ? (dryLogsThisMonth / totalLogsThisMonth) * 100 : 0;
 
+        // FIX: Declare logsByWeek before it is used to calculate greenBadges.
         const logsByWeek = wasteLogs.reduce((acc, log) => {
             const week = getWeekNumber(new Date(log.timestamp));
             (acc[week] = acc[week] || []).push(log);
             return acc;
         }, {} as Record<number, WasteLog[]>);
-
+        
         // FIX: Explicitly type reduce callback parameters to prevent type inference issues.
         const greenBadges = Object.values(logsByWeek).reduce((count: number, weeklyLogs: WasteLog[]) => {
             if (weeklyLogs.length >= 3 && !weeklyLogs.some(log => log.type === 'mixed')) {
@@ -73,6 +75,13 @@ const DashboardScreen: React.FC = () => {
         return () => clearTimeout(timer);
     }, [showSuccess]);
 
+    useEffect(() => {
+        if (adState === 'watched') {
+            const timer = setTimeout(() => setAdState('idle'), 3000); // Show "Thank you" for 3 seconds
+            return () => clearTimeout(timer);
+        }
+    }, [adState]);
+
     const handleLogWaste = (type: 'wet' | 'dry' | 'mixed') => {
         if (showSuccess) return; // Prevent re-logging while animation is showing
         const wasFinedForThirdStrike = addWasteLog(type);
@@ -81,6 +90,13 @@ const DashboardScreen: React.FC = () => {
         if (wasFinedForThirdStrike) {
             alert(t('consecutiveFineMessage'));
         }
+    };
+
+    const handleWatchAd = () => {
+        setAdState('watching');
+        setTimeout(() => {
+            setAdState('watched');
+        }, 3000); // Simulate 3-second ad watch
     };
 
     const nextPickupDate = new Date();
@@ -168,6 +184,39 @@ const DashboardScreen: React.FC = () => {
                     )}
                 </div>
             </Card>
+
+            <Card>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                    <div className="flex-shrink-0 text-4xl">❤️</div>
+                    <div>
+                        <h2 className="text-2xl font-semibold">{t('supportACause')}</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('supportACauseDesc')}</p>
+                    </div>
+                    <div className="w-full sm:w-auto flex-shrink-0">
+                        <button
+                            onClick={handleWatchAd}
+                            disabled={adState !== 'idle'}
+                            className={`w-full sm:w-48 h-12 px-6 py-2 font-semibold rounded-lg transition-all duration-300 ease-in-out transform active:scale-95 disabled:cursor-not-allowed ${
+                                adState === 'idle' ? 'bg-secondary text-white hover:bg-teal-700' :
+                                adState === 'watching' ? 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300' :
+                                'bg-green-500 text-white'
+                            }`}
+                        >
+                            {adState === 'idle' && <span>{t('watchAd')}</span>}
+                            {adState === 'watching' && (
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-75"></div>
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-150"></div>
+                                    <span>{t('watchingAd')}</span>
+                                </div>
+                            )}
+                            {adState === 'watched' && <span>{t('thankYou')}</span>}
+                        </button>
+                    </div>
+                </div>
+            </Card>
+
         </div>
     );
 };
