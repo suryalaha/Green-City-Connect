@@ -1,3 +1,4 @@
+
 // FIX: Implement the missing ProfileScreen component.
 import React, { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
@@ -417,6 +418,28 @@ const ProfileScreen: React.FC = () => {
                         </select>
                     </div>
                  </div>
+            </Card>
+
+            <Card>
+                <button 
+                    onClick={() => setCurrentScreen('help')}
+                    className="w-full flex justify-between items-center text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 -m-6 p-6 rounded-xl"
+                >
+                    <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold">{t('helpTitle')}</h3>
+                            <p className="text-sm text-gray-500">{t('helpSubtitle')}</p>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </Card>
 
             <Card>
